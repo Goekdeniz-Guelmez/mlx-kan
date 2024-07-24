@@ -33,6 +33,10 @@ from kan_mlx.kan import KAN
 kan_model = KAN()
 ```
 
+```sh
+python -m mlx-kan.scripts.main --help
+```
+
 ## Clone this Repo
 
 To run this example, you need to have Python and the necessary libraries installed. Follow these steps to set up your environment:

@@ -10,7 +10,7 @@ permissions:
 jobs:
   deploy:
 
-    runs-on: ubuntu-latest
+    runs-on: macos-latest # ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
@@ -33,4 +33,3 @@ jobs:
       with:
         user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}
-        packages_dir: dist

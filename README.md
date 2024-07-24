@@ -1,4 +1,4 @@
-# KAN: Kolmogorov–Arnold Networks implementation on MNIST with MLX
+# KAN: Kolmogorov–Arnold Networks in MLX for Apple silicon
 
 This code contains an example implementation of training a Kolmogorov–Arnold Network (KAN) on the MNIST dataset using the MLX framework. This example demonstrates how to configure and train the model using various command-line arguments for flexibility.
 
@@ -77,7 +77,7 @@ You can run the script `main.py` to train the KAN model on the MNIST dataset. Th
 #### Find all Arguments wioth descriptions
 
 ```sh
-python main.py --help
+python -m scripts.main --help
 ```
 
 #### Basic Usage
@@ -85,7 +85,7 @@ python main.py --help
 Train the KAN model on the MNIST dataset with default settings:
 
 ```sh
-python main.py --dataset mnist
+python -m scripts.main --dataset mnist
 ```
 
 #### Custom Configuration
@@ -93,7 +93,7 @@ python main.py --dataset mnist
 Train the KAN model with a custom configuration:
 
 ```sh
-python main.py --dataset fashion_mnist --num_layers 3 --hidden_dim 128 --num_epochs 20 --batch_size 128 --learning_rate 0.0005 --seed 42
+python -m scripts.main --dataset fashion_mnist --num_layers 3 --hidden_dim 128 --num_epochs 20 --batch_size 128 --learning_rate 0.0005 --seed 42
 ```
 
 #### Using CPU
@@ -101,7 +101,7 @@ python main.py --dataset fashion_mnist --num_layers 3 --hidden_dim 128 --num_epo
 Train the KAN model using the CPU backend:
 
 ```sh
-python main.py --cpu --dataset mnist
+python -m scripts.main --cpu --dataset mnist
 ```
 
 ## Model Architecture

@@ -1,6 +1,5 @@
 import sys
 from pathlib import Path
-
 from setuptools import find_packages, setup
 
 # Get the project root directory
@@ -16,7 +15,7 @@ with open(requirements_path) as fid:
     requirements = [l.strip() for l in fid.readlines()]
 
 # Import the version from the package
-from version import __version__
+from kan.version import __version__
 
 # Setup configuration
 setup(
@@ -28,12 +27,17 @@ setup(
     author_email="goekdenizguelmez@gmail.com",
     author="Gökdeniz Gülmez",
     url="https://github.com/Goekdeniz-Guelmez/mlx-kan",
-    license="Apache2.0",
+    license="Apache-2.0",
     install_requires=requirements,
-    packages=find_packages(where=root_dir),
+    packages=find_packages(),
+    entry_points={
+        'console_scripts': [
+            'train-kan=scripts.main:main',
+        ],
+    },
     python_requires=">=3.8",
-    classifiers= [
+    classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: MacOS :: MacOS X"
-    ]
+    ],
 )

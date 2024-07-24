@@ -16,6 +16,25 @@ Based on the [paper](https://arxiv.org/pdf/2404.19756)
 
 ## Installation
 
+### Usage with PyPi
+
+instal the Package:
+
+```sh
+pip install mlx-kan
+```
+
+Example usage in Python:
+
+```python
+from kan_mlx.kan import KAN
+
+# Initialize and use KAN
+kan_model = KAN()
+```
+
+## Clone this Repo
+
 To run this example, you need to have Python and the necessary libraries installed. Follow these steps to set up your environment:
 
 1. Clone the repository:
@@ -77,7 +96,7 @@ Train the KAN model with a custom configuration:
 python main.py --dataset fashion_mnist --num_layers 3 --hidden_dim 128 --num_epochs 20 --batch_size 128 --learning_rate 0.0005 --seed 42
 ```
 
-#### Using GPU
+#### Using CPU
 
 Train the KAN model using the CPU backend:
 

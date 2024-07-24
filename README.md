@@ -18,9 +18,16 @@ Based on the [paper](https://arxiv.org/pdf/2404.19756)
 
 To run this example, you need to have Python and the necessary libraries installed. Follow these steps to set up your environment:
 
-1. Install the required packages:
+1. Clone the repository:
 
-```sh
+```bash
+git clone https://github.com/Goekdeniz-Guelmez/mlx-kan.git
+cd mlx-kan
+```
+
+2. Install the required packages:
+
+```bash
 pip install -r requirements.txt
 ```
 

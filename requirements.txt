@@ -1,2 +1,4 @@
-mlx>=0.14.1
+mlx>=0.14
+numpy
+requests
 numpy

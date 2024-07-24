@@ -21,7 +21,7 @@ from version import __version__
 # Setup configuration
 setup(
     name="mlx-kan",
-    version="0.1",
+    version=__version__,
     description="KAN: Kolmogorov–Arnold Networks on Apple silicon with MLX.",
     long_description=open(root_dir / "README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
@@ -33,7 +33,7 @@ setup(
     packages=find_packages(where=root_dir),
     python_requires=">=3.8",
     classifiers= [
-            "Programming Language :: Python :: 3",
-            "Operating System :: MacOS :: MacOS X"
-        ]
+        "Programming Language :: Python :: 3",
+        "Operating System :: MacOS :: MacOS X"
+    ]
 )

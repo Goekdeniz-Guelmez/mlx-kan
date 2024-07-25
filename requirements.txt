@@ -1,4 +1,5 @@
-mlx
+mlx>=0.14
 numpy
 requests
 numpy
+setuptools

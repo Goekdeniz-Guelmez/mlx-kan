@@ -28,7 +28,7 @@ setup(
     author="Gökdeniz Gülmez",
     url="https://github.com/Goekdeniz-Guelmez/mlx-kan",
     license="Apache-2.0",
-    install_requires=requirements,
+    install_requires=["mlx"] + requirements,
     packages=find_packages(),
     entry_points={
         'console_scripts': [

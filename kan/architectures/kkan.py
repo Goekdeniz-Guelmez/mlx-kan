@@ -4,7 +4,7 @@ import mlx.core as mx
 import mlx.nn as nn
 
 from kan import KANLinear
-from ..kan_convolution.kanConv import KAN_Convolutional_Layer
+from kan.kan_convolution.kanConv import KAN_Convolutional_Layer
 
 class KKAN_Convolutional_Network(nn.Module):
     def __init__(
@@ -50,7 +50,7 @@ class KKAN_Convolutional_Network(nn.Module):
             grid_range=grid_range
         )
 
-    def forward(self, x):
+    def __call__(self, x):
         x = self.pool1(self.conv1(x))
         x = mx.flatten(self.pool1(self.conv2(x)))
         x = self.kan1(x)

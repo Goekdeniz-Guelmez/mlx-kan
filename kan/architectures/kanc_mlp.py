@@ -28,7 +28,7 @@ class KANC_MLP(nn.Module):
         self.linear2 = nn.Linear(256, 10)
 
 
-    def forward(self, x):
+    def __call__(self, x):
         x = self.conv1(x)
 
         x = self.pool1(x)

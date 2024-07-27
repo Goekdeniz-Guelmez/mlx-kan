@@ -5,6 +5,18 @@ from typing import Union, List
 
 import mlx.core as mx
 import mlx.nn as nn
+import torch
+
+def extract_patches(arr, patch_size):
+    """ Extract patches of size patch_size from arr. """
+    arr_shape = arr.shape
+    patch_shape = (arr_shape[0] - patch_size[0] + 1, 
+                   arr_shape[1] - patch_size[1] + 1,
+                   patch_size[0], patch_size[1])
+    
+    strides = arr.strides + (arr.strides[0], arr.strides[1])
+    
+    return np.lib.stride_tricks.as_strided(arr, shape=patch_shape, strides=strides)
 
 # Calculate output dimensions for convolution
 def calc_out_dims(matrix, kernel_side, stride, dilation, padding):
@@ -35,14 +47,33 @@ def multiple_convs_kan_conv2d(
     Returns:
         np.ndarray: 2D Feature map, i.e. matrix after convolution.
     """
-    h_out, w_out,batch_size,n_channels = calc_out_dims(matrix, kernel_side, stride, dilation, padding)
+    # Convert input matrix to PyTorch tensor
+    matrix_tensor = torch.Tensor(matrix)
+    
+    # Compute output dimensions
+    h_out, w_out, batch_size, n_channels = calc_out_dims(matrix, kernel_side, stride, dilation, padding)
     n_convs = len(kernels)
-    matrix_out = mx.zeros((batch_size,n_channels*n_convs,h_out,w_out))
-    unfold = nn.Unfold((kernel_side,kernel_side), dilation=dilation, padding=padding, stride=stride)
-    conv_groups = unfold(matrix[:,:,:,:]).view(batch_size, n_channels,  kernel_side*kernel_side, h_out*w_out).transpose(2, 3) # reshape(batch_size, n_channels, h_out,w_out)
+    
+    # Initialize output tensor
+    matrix_out = mx.zeros((batch_size, n_channels * n_convs, h_out, w_out))
+    
+    # Unfold the input tensor using PyTorch
+    unfold = torch.nn.Unfold(kernel_size=(kernel_side, kernel_side), dilation=dilation, padding=padding, stride=stride)
+    unfolded = unfold(matrix_tensor)
+    
+    # Convert unfolded tensor to NumPy array for processing in MXNet
+    unfolded_np = unfolded.numpy()
+    unfolded_mx = mx.array(unfolded_np)
+    
+    # Reshape and transpose unfolded tensor
+    unfolded_mx = unfolded_mx.view(batch_size, n_channels, kernel_side * kernel_side, h_out * w_out).transpose((0, 2, 1, 3))
+    
+    # Apply convolutional kernels
     for channel in range(n_channels):
         for kern in range(n_convs):
-            matrix_out[:,kern  + channel*n_convs,:,:] = kernels[kern].conv.forward(conv_groups[:,channel,:,:].flatten(0,1)).reshape((batch_size,h_out,w_out))
+            conv_result = kernels[kern](unfolded_mx[:, channel, :, :].flatten(0, 1))
+            matrix_out[:, kern + channel * n_convs, :, :] = mx.rray(conv_result.reshape(batch_size, h_out, w_out))
+    
     return matrix_out
 
 # Perform a single KAN convolution
@@ -69,10 +100,10 @@ def kan_conv2d(
     h_out, w_out, batch_size, n_channels = calc_out_dims(matrix, kernel_side, stride, dilation, padding)
     
     matrix_out = mx.zeros((batch_size,n_channels,h_out,w_out))
-    unfold = nn.Unfold((kernel_side,kernel_side), dilation=dilation, padding=padding, stride=stride)
+    unfold = torch.nn.Unfold((kernel_side,kernel_side), dilation=dilation, padding=padding, stride=stride)
 
     for channel in range(n_channels):
-        conv_groups = unfold(matrix[:,channel,:,:].unsqueeze(1)).transpose(1, 2)
+        conv_groups = mx.array(unfold(torch.Tensor(matrix[:,channel,:,:]).unsqueeze(1)).transpose(1, 2))
         for k in range(batch_size):
             matrix_out[k,channel,:,:] = kernel.forward(conv_groups[k,:,:]).reshape((h_out,w_out))
     return matrix_out

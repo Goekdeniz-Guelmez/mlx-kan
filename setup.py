@@ -15,7 +15,8 @@ with open(requirements_path) as fid:
     requirements = [l.strip() for l in fid.readlines()]
 
 # Import the version from the package
-from kan.version import __version__
+sys.path.append(str(package_dir))
+from version import __version__
 
 # Setup configuration
 setup(

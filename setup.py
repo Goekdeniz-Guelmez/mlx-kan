@@ -30,11 +30,6 @@ setup(
     license="Apache-2.0",
     install_requires=requirements,
     packages=find_packages(),
-    entry_points={
-        'console_scripts': [
-            'mlx-kan.train-kan=quick-scripts.quick-train:main',
-        ],
-    },
     python_requires=">=3.8",
     classifiers=[
         "Programming Language :: Python :: 3.10",

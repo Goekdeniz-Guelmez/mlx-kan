@@ -18,7 +18,7 @@ Based on the [paper](https://arxiv.org/pdf/2404.19756)
 
 ### Usage with PyPi
 
-instal the Package:
+install the Package:
 
 ```sh
 pip install mlx-kan
@@ -35,6 +35,10 @@ kan_model = KAN()
 
 ```sh
 python -m mlx-kan.quick_scripts.quick_train --help
+```
+
+```sh
+python -m mlx-kan.quick_scripts.quick_train --dataset fashion_mnist --num-layers 3 --hidden-dim 128 --num-epochs 20 --batch-size 128 --learning-rate 0.0005 --seed 42
 ```
 
 ## Clone this Repo

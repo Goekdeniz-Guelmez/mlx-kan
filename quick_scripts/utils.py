@@ -23,7 +23,7 @@ def print_trainable_parameters(model):
         model.leaf_modules(), is_leaf=lambda m: isinstance(m, nn.Module)
     )
     total_p = sum(nparams(m) for _, m in leaf_modules) / 10**6
-    print(f"Training model with: {total_p:.3f}M) Params.")
+    print(f"Training model with: {total_p:.3f}M params.")
 
 def save_model(model: nn.Module, save_path):
     model_path = os.path.join(save_path, "model.safetensors")

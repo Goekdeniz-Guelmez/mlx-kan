@@ -34,7 +34,7 @@ kan_model = KAN()
 ```
 
 ```sh
-python -m mlx-kan.scripts.main --help
+python -m mlx-kan.scripts.quick_train --help
 ```
 
 ## Clone this Repo
@@ -81,7 +81,7 @@ You can run the script `main.py` to train the KAN model on the MNIST dataset. Th
 #### Find all Arguments wioth descriptions
 
 ```sh
-python -m scripts.main --help
+python -m scripts.quick_train --help
 ```
 
 #### Basic Usage
@@ -89,7 +89,7 @@ python -m scripts.main --help
 Train the KAN model on the MNIST dataset with default settings:
 
 ```sh
-python -m scripts.main --dataset mnist
+python -m scripts.quick_train --dataset mnist
 ```
 
 #### Custom Configuration
@@ -97,7 +97,7 @@ python -m scripts.main --dataset mnist
 Train the KAN model with a custom configuration:
 
 ```sh
-python -m scripts.main --dataset fashion_mnist --num_layers 3 --hidden_dim 128 --num_epochs 20 --batch_size 128 --learning_rate 0.0005 --seed 42
+python -m scripts.quick_train --dataset fashion_mnist --num_layers 3 --hidden_dim 128 --num_epochs 20 --batch_size 128 --learning_rate 0.0005 --seed 42
 ```
 
 #### Using CPU
@@ -105,7 +105,7 @@ python -m scripts.main --dataset fashion_mnist --num_layers 3 --hidden_dim 128 -
 Train the KAN model using the CPU backend:
 
 ```sh
-python -m scripts.main --cpu --dataset mnist
+python -m scripts.quick_train --cpu --dataset mnist
 ```
 
 ## Model Architecture

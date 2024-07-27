@@ -9,8 +9,10 @@ root_dir = Path(__file__).parent
 package_dir = root_dir / "kan"
 
 # Read the requirements from the requirements.txt file
-with open(package_dir / "requirements.txt") as fid:
-    requirements = [l.strip() for l in fid.readlines()]
+# First try to read from the root directory, if not found, try the package directory
+requirements_file = root_dir / "requirements.txt"
+if not requirements_file.exists():
+    requirements_file = package_dir / "requirements.txt"
 
 # Import the version from the package
 version = {}

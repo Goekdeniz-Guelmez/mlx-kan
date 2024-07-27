@@ -14,6 +14,13 @@ requirements_file = root_dir / "requirements.txt"
 if not requirements_file.exists():
     requirements_file = package_dir / "requirements.txt"
 
+if requirements_file.exists():
+    with open(requirements_file) as fid:
+        requirements = [l.strip() for l in fid.readlines()]
+else:
+    print("Warning: requirements.txt not found. Proceeding without dependencies.")
+
+
 # Import the version from the package
 version = {}
 with open(str(package_dir / "version.py")) as f:

@@ -203,22 +203,31 @@ class KAN(nn.Module):
     def __init__(
         self,
         layers_hidden,
+        base_size=64,
         grid_size=5,  
         spline_order=3,
         scale_noise=0.1,
         scale_base=1.0,
         scale_spline=1.0,
         hidden_act=nn.SiLU,
-        grid_eps=0.02, 
+        grid_eps=0.02,
         grid_range=[-1, 1],
     ):
         super().__init__()
 
+        self.base_size = base_size
+
         # Save the grid and spline parameters
         self.grid_size = grid_size
         self.spline_order = spline_order
-        
+
         self.layers = [] # Initialize the list of layers
+        # Check if layers_hidden is an integer or a list
+        if isinstance(layers_hidden, int):
+            # Generate hidden layer sizes based on the number of layers
+            layers_hidden = self._generate_hidden_layers(layers_hidden)
+        elif not isinstance(layers_hidden, list):
+            raise ValueError("'layers_hidden' must be an int or a list of layer sizes")
 
         # Create KANLinear layers based on the hidden layers provided
         for in_features, out_features in zip(layers_hidden, layers_hidden[1:]):
@@ -244,6 +253,12 @@ class KAN(nn.Module):
                 layer.update_grid(x) # Update the grid if required
             x = layer(x) # Pass the input through the current layer
         return x
+    
+    def _generate_hidden_layers(self, num_layers):
+        # Generate hidden layer sizes based on a simple pattern
+        base_size = self.base_size
+        layers_hidden = [base_size * (2 ** i) for i in range(num_layers + 1)]
+        return layers_hidden
     
     def regularization_loss(self, regularize_activation=1.0, regularize_entropy=1.0):
         # Compute the regularization loss for all layers

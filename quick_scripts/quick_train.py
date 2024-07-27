@@ -1,3 +1,5 @@
+# Copyright © 2024 Gökdeniz Gülmez
+
 import argparse
 import time
 import logging
@@ -7,7 +9,7 @@ import mlx.optimizers as optim
 import numpy as np
 import quick_scripts.mnist as mnist
 
-from kan import KAN, KAN_Convolutional_Layer
+from kan import KAN
 
 from quick_scripts.utils import print_trainable_parameters, save_model, save_config, create_save_directory
 

@@ -4,11 +4,11 @@ import mlx.core as mx
 import mlx.nn as nn
 import mlx.optimizers as optim
 import numpy as np
-import scripts.mnist as mnist
+import quick_scripts.mnist as mnist
 
 from kan import KAN, KAN_Convolutional_Layer
 
-from scripts.utils import print_trainable_parameters, save_model
+from quick_scripts.utils import print_trainable_parameters, save_model
 
 def loss_fn(model, X, y):
     return mx.mean(nn.losses.cross_entropy(model(X), y))

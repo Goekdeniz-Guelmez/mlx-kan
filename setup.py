@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-from setuptools import setup
+from setuptools import find_packages, setup
 
 # Get the project root directory
 root_dir = Path(__file__).parent
@@ -28,7 +28,7 @@ setup(
     url="https://github.com/Goekdeniz-Guelmez/mlx-kan",
     license="Apache-2.0",
     install_requires=requirements,
-    packages=["mlx_kan", "mlx_kan.kan", "mlx_kan.convolution"],
+    packages=find_packages(),
     entry_points={
         'console_scripts': [
             'mlx-kan.train-kan=quick-scripts.quick-train:main',
@@ -36,7 +36,7 @@ setup(
     },
     python_requires=">=3.8",
     classifiers=[
-        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.10",
         "Operating System :: MacOS :: MacOS X"
     ],
 )

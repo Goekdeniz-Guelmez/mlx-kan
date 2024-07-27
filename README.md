@@ -16,7 +16,7 @@ Based on the [paper](https://arxiv.org/pdf/2404.19756)
 
 ## Installation
 
-### Usage with PyPi (currently not released)
+### Usage with PyPi
 
 instal the Package:
 

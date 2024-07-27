@@ -74,6 +74,7 @@ You can run the script `main.py` to train the KAN model on the MNIST dataset. Th
 - `--weight-decay`: Weight decay for the optimizer. Default is `1e-4`.
 - `--eval-report-count`: Number of epochs to report validations / test accuracy values. Default is `10`.
 - `--save-path`: Path with the model name where the trained KAN model will be saved. Default is `traned_kan_model.safetensors`.
+- `--train-batched`: Use batch training instead of single epoch. Default is `False`.
 - `--seed`: Random seed for reproducibility. Default is `0`.
 
 ### Examples
@@ -97,7 +98,7 @@ python -m quick_scripts.quick_train --dataset mnist
 Train the KAN model with a custom configuration:
 
 ```sh
-python -m quick_scripts.quick_train --dataset fashion_mnist --num_layers 3 --hidden_dim 128 --num_epochs 20 --batch_size 128 --learning_rate 0.0005 --seed 42
+python -m quick_scripts.quick_train --dataset fashion_mnist --num-layers 3 --hidden-dim 128 --num-epochs 20 --batch-size 128 --learning-rate 0.0005 --seed 42
 ```
 
 #### Using CPU

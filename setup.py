@@ -28,16 +28,16 @@ setup(
     author="Gökdeniz Gülmez",
     url="https://github.com/Goekdeniz-Guelmez/mlx-kan",
     license="Apache-2.0",
-    install_requires=["mlx"] + requirements,
+    install_requires=requirements,
     packages=find_packages(),
     entry_points={
         'console_scripts': [
-            'train-kan=scripts.main:main',
+            'train-kan=quick-scripts.quick-train:main',
         ],
     },
-    python_requires=">=3.8",
+    python_requires=">=3.10",
     classifiers=[
-        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.10",
         "Operating System :: MacOS :: MacOS X"
     ],
 )

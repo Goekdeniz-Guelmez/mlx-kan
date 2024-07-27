@@ -1,8 +1,8 @@
-from typing import Union, List
+# Copyright © 2024 Gökdeniz Gülmez
 
 import math
-
 import numpy as np
+from typing import Union, List
 
 import mlx.core as mx
 import mlx.nn as nn

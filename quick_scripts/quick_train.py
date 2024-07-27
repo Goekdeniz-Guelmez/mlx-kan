@@ -87,9 +87,9 @@ def main(args):
         current_epoch = e + 1
         tic = time.perf_counter()
         if args.train_batched:
-            loss = train_epoch(model, optimizer, train_images, train_labels, args.batch_size, loss_and_grad_fn=loss_and_grad_fn)
-        else:
             loss = train_epoch_batched(model, optimizer, train_images, train_labels, args.batch_size, loss_and_grad_fn=loss_and_grad_fn)
+        else:
+            loss = train_epoch(model, optimizer, train_images, train_labels, args.batch_size, loss_and_grad_fn=loss_and_grad_fn)
         toc = time.perf_counter()
         logging.info(f"Epoch {current_epoch}: Train Loss: {loss:.4f}, Time {toc - tic:.3f} (s)")
         print(f"Epoch {current_epoch}: Train Loss: {loss:.4f}, Time {toc - tic:.3f} (s)")

@@ -1,3 +1,6 @@
 include README.md
 include requirements.txt
 include LICENSE
+recursive-include mlx_kan/kan/ *.py
+recursive-include mlx_kan/kan/convolution/ *.py
+recursive-include mlx_kan/quick_scripts/ *.py

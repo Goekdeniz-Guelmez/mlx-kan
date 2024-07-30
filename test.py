@@ -43,8 +43,7 @@ print(out)
 
 
 
-######## TRAINING ARGS
-
+######## TRAINING UTILS
 def loss_fn(model, X, y):
     return mx.mean(nn.losses.cross_entropy(model(X), y))
 
@@ -66,7 +65,7 @@ def train_epoch(model: nn.Module, optimizer: optim.Optimizer, train_images: mx.a
     return total_loss / num_steps
 
 
-def train(model, train_images, train_labels, num_epochs=100, clip_grad_norm=False):
+def train(model, train_images, train_labels, num_epochs=100):
     optimizer = optim.AdamW(learning_rate=0.0004, weight_decay=0.003)  # Initialize a new optimizer for each model
     loss_and_grad_fn = nn.value_and_grad(model, loss_fn)
     for epoch in range(num_epochs):

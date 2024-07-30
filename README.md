@@ -82,7 +82,38 @@ The `BigKANMLP` class consists of four `KANLinear` layers. It is designed for la
 
 The `LlamaKANMLP` class consists of three `KANLinear` layers configured in a the same manner Llama's MLP layer is configured. It is designed for models requiring a unique layer arrangement.
 
-These classes provide flexibility in configuring the number of layers and hidden dimensions, allowing for tailored architectures suitable for various tasks.
+
+## Training
+
+if you wish to train the MLP's, you need to update the grid points at the end of each epoch.
+
+```python
+# Update grid points here
+for name, layer in model.__dict__.items():
+    if isinstance(layer, KANLinear):
+        with mx.no_grad():
+            layer.update_grid(train_set)
+```
+
+### Training step example
+
+```python
+def train(model, train_set, train_labels, num_epochs=100):
+    optimizer = optim.AdamW(learning_rate=0.0004, weight_decay=0.003)  # Initialize a new optimizer for each model
+    loss_and_grad_fn = nn.value_and_grad(model, loss_fn)
+
+    # For 1 step
+    loss, grads = loss_and_grad_fn(model, train_set, train_labels)
+    optimizer.update(model, grads)
+    mx.eval(model.parameters(), optimizer.state)
+    avg_loss = total_loss += loss.item()
+
+    # Update grid points here
+    for name, layer in model.__dict__.items():
+        if isinstance(layer, KANLinear):
+            with mx.no_grad():
+                layer.update_grid(train_set)
+````
 
 -----
 <br>

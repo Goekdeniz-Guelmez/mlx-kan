@@ -27,11 +27,13 @@ pip install mlx-kan
 Example usage in Python:
 
 ```python
-from kan_mlx.kan import KAN
+from mlx_kan.kan import KAN
 
 # Initialize and use KAN
-kan_model = KAN()
+kan_model = KAN([in_features * out_features] + [hidden_dim] * (num_layers - 1) + [num_classes])
 ```
+
+### If ypu jsut want to try out a quick and simple training session:
 
 ```sh
 python -m mlx-kan.quick_scripts.quick_train --help
@@ -40,6 +42,54 @@ python -m mlx-kan.quick_scripts.quick_train --help
 ```sh
 python -m mlx-kan.quick_scripts.quick_train --num-layers 2 --hidden-dim 64 --num-epochs 2 --batch-size 14 --seed 42 --clip-grad-norm
 ```
+
+## New MLP Architectures
+
+The following classes define different sizes of MLP architectures using `KANLinear` layers. You can import them via:
+
+```python
+from mlx_kan.kan.architectures.KANMLP import LlamaKANMLP, SmallKANMLP, MiddleKANMLP, BigKANMLP
+```
+
+### Parameters
+
+- `in_features`: The number of input features.
+- `hidden_dim`: The number of hidden units in each layer.
+- `out_features`: The number of output features.
+- `grid_size`: The size of the grid used in the `KANLinear` layer. Default is `5`.
+- `spline_order`: The order of the spline used in the `KANLinear` layer. Default is `3`.
+- `scale_noise`: The noise scaling factor. Default is `0.1`.
+- `scale_base`: The base scaling factor. Default is `1.0`.
+- `scale_spline`: The spline scaling factor. Default is `1.0`.
+- `enable_standalone_scale_spline`: Whether to enable standalone scaling for the spline. Default is `True`.
+- `hidden_act`: The activation function used in hidden layers. Default is `nn.SiLU`.
+- `grid_eps`: The epsilon value for the grid. Default is `0.02`.
+- `grid_range`: The range of the grid. Default is `[-1, 1]`.
+
+### `SmallKANMLP` Class
+
+The `SmallKANMLP` class consists of two `KANLinear` layers. It is designed for small-scale models.
+
+### `MiddleKANMLP` Class
+
+The `MiddleKANMLP` class consists of three `KANLinear` layers. It is designed for medium-scale models.
+
+### `BigKANMLP` Class
+
+The `BigKANMLP` class consists of four `KANLinear` layers. It is designed for large-scale models.
+
+### `LlamaKANMLP` Class
+
+The `LlamaKANMLP` class consists of three `KANLinear` layers configured in a the same manner Llama's MLP layer is configured. It is designed for models requiring a unique layer arrangement.
+
+These classes provide flexibility in configuring the number of layers and hidden dimensions, allowing for tailored architectures suitable for various tasks.
+
+-----
+<br>
+<br>
+<br>
+
+# From source
 
 ## Clone this Repo
 
@@ -124,6 +174,10 @@ layers_hidden = [in_features * out_features] + [hidden_dim] * (num_layers - 1) +
 model = KAN(layers_hidden)
 ```
 
+----
+
+<br>
+
 ### KAN Class
 
 The `KAN` class initializes a sequence of `KANLinear` layers based on the provided hidden layers configuration. Each layer performs linear transformations with kernel attention mechanisms.
@@ -137,35 +191,6 @@ class KAN(nn.Module):
             self.layers.append(
                 KANLinear(
                     in_features, out_features, grid_size, spline_order, scale_noise, scale_base, scale_spline, base_activation, grid_eps, grid_range
-                )
-            )
-    def __call__(self, x, update_grid=False):
-        for layer in self.layers:
-            if update_grid:
-                layer.update_grid(x)
-            x = layer(x)
-        return x
-    
-    def regularization_loss(self, regularize_activation=1.0, regularize_entropy=1.0):
-        return mx.add(*(
-            layer.regularization_loss(regularize_activation, regularize_entropy) 
-            for layer in self.layers
-        ))
-```
-
-### KanConvolutional Class
-
-The KanConvolutional class defines the convolutional model architecture. The network consists of multiple KANConv layers, each defined by the provided parameters. This class is used for models that require convolutional layers.
-
-```python
-class KanConvolutional(nn.Module):
-    def __init__(self, layers_hidden, grid_size=5, spline_order=3, scale_noise=0.1, scale_base=1.0, scale_spline=1.0, base_activation=nn.SiLU, grid_eps=0.02, grid_range=[-1, 1]):
-        super().__init__()
-        self.layers = []
-        for in_channels, out_channels in zip(layers_hidden, layers_hidden[1:]):
-            self.layers.append(
-                KANConv(
-                    in_channels, out_channels, grid_size, spline_order, scale_noise, scale_base, scale_spline, base_activation, grid_eps, grid_range
                 )
             )
     def __call__(self, x, update_grid=False):
@@ -198,3 +223,30 @@ Contributions are welcome! If you have any suggestions or improvements, feel fre
 This project is licensed under the Apache 2.0 License. See the [LICENSE](LICENSE) file for details.
 
 Made with love by Gökdeniz Gülmez.
+
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+
+---
+
+## Citing MLX Examples
+
+The mlx-kan software suite was developed by Gökdeniz Gülmez. If you find
+mlx-kan useful in your research and wish to cite it, please use the following
+BibTex entry:
+
+```
+@software{
+  mlx-kan,
+  author = {Gökdeniz Gülmez},
+  title = {{mlx-kan}: KAN: Kolmogorov–Arnold Networks in MLX for Apple silicon},
+  url = {https://github.com/Goekdeniz-Guelmez/mlx-kan},
+  version = {0.1.9},
+  year = {2024},
+}
+```

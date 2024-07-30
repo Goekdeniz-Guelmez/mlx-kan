@@ -9,6 +9,7 @@ import numpy as np
 import quick_scripts.mnist as mnist
 
 from kan import KAN
+from kan.architectures.KANMLP import LlamaKANMLP, BasicKANMLP
 
 from quick_scripts.utils import get_parameters, save_model, save_config, create_save_directory
 
@@ -75,8 +76,9 @@ def main(args):
     print("...Dataset Loaded")
 
     print("\nInitializing and creating model...")
-    layers = [args.in_features * args.out_features] + [args.hidden_dim] * (args.num_layers - 1) + [args.num_classes]
-    model = KAN(layers)
+    # layers = [args.in_features * args.out_features] + [args.hidden_dim] * (args.num_layers - 1) + [args.num_classes]
+    # model = KAN(layers)
+    model = LlamaKANMLP(args.in_features, args.hidden_dim, args.out_features)
     print("Model initialized and created...")
 
     mx.eval(model.parameters())

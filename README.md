@@ -38,7 +38,7 @@ python -m mlx-kan.quick_scripts.quick_train --help
 ```
 
 ```sh
-python -m mlx-kan.quick_scripts.quick_train --dataset fashion_mnist --num-layers 3 --hidden-dim 128 --num-epochs 20 --batch-size 128 --learning-rate 0.0005 --seed 42
+python -m mlx-kan.quick_scripts.quick_train --num-layers 2 --hidden-dim 64 --num-epochs 2 --batch-size 14 --seed 42 --clip-grad-norm
 ```
 
 ## Clone this Repo
@@ -65,7 +65,7 @@ You can run the script `main.py` to train the KAN model on the MNIST dataset. Th
 ### Arguments
 
 - `--cpu`: Use the Metal back-end.
-- `--use-kan-convolution`: Use the Convolution KAN architecture. Will give a error because its not implemented yet.
+- `--clip-grad-norm`: Use gradient clipping to prevent the gradients from becoming too large. Default is `False`.
 - `--dataset`: The dataset to use (`mnist` or `fashion_mnist`). Default is `mnist`.
 - `--num_layers`: Number of layers in the model. Default is `2`.
 - `--in-features`: Number input features. Default is `28`.
@@ -102,7 +102,7 @@ python -m quick_scripts.quick_train --dataset mnist
 Train the KAN model with a custom configuration:
 
 ```sh
-python -m quick_scripts.quick_train --dataset fashion_mnist --num-layers 3 --hidden-dim 128 --num-epochs 20 --batch-size 128 --learning-rate 0.0005 --seed 42
+python -m quick_scripts.quick_train --dataset fashion_mnist --num-layers 2 --hidden-dim 64 --num-epochs 2 --batch-size 14 --seed 42 --clip-grad-norm
 ```
 
 #### Using CPU
@@ -120,7 +120,7 @@ The `KAN` (Kolmogorov–Arnold Networks) class defines the model architecture. T
 ### Example Model Initialization
 
 ```python
-layers_hidden = [28 * 28] + [hidden_dim] * (num_layers - 1) + [num_classes]
+layers_hidden = [in_features * out_features] + [hidden_dim] * (num_layers - 1) + [num_classes]
 model = KAN(layers_hidden)
 ```
 

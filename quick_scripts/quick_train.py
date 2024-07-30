@@ -1,6 +1,7 @@
 import argparse
 import time
 import logging
+from tqdm import tqdm
 import mlx.core as mx
 import mlx.nn as nn
 import mlx.optimizers as optim
@@ -9,15 +10,7 @@ import quick_scripts.mnist as mnist
 
 from kan import KAN
 
-from quick_scripts.utils import print_trainable_parameters, save_model, save_config, create_save_directory
-
-def create_model(args) -> nn.Module:
-    print("Initializing and creating model")
-    if args.use_kan_convolution:
-        raise NotImplementedError("KAN Convolutional Layer functionality is not yet implemented.")
-    else:
-        layers = [args.in_features * args.out_features] + [args.hidden_dim] * (args.num_layers - 1) + [args.num_classes]
-        return KAN(layers)
+from quick_scripts.utils import get_parameters, save_model, save_config, create_save_directory
 
 def loss_fn(model, X, y):
     return mx.mean(nn.losses.cross_entropy(model(X), y))
@@ -40,22 +33,29 @@ def batched_eval_fn(model: nn.Module, X: mx.array, y: mx.array, batch_size: int)
         total_samples += batch_y.size
     return total_correct / total_samples
 
-def train_epoch_batched(model: nn.Module, optimizer: optim.Optimizer, train_images: mx.array, train_labels: mx.array, batch_size: int, loss_and_grad_fn) -> float:
-    model.train()
+def train_epoch_batched(model: nn.Module, optimizer: optim.Optimizer, train_images: mx.array, train_labels: mx.array, batch_size: int, loss_and_grad_fn, clip_grad_norm: bool = False) -> float:
     total_loss = 0
     num_batches = 0
-    for X, y in batch_iterate(batch_size, train_images, train_labels):
+
+    model.train()
+    for X, y in tqdm(batch_iterate(batch_size, train_images, train_labels), total=len(train_images) // batch_size, desc='Training'):
         loss, grads = loss_and_grad_fn(model, X, y)
+        if clip_grad_norm:
+            optim.clip_grad_norm(grads, max_norm=1.0)
         optimizer.update(model, grads)
         mx.eval(model.parameters(), optimizer.state)
         total_loss += loss.item()
         num_batches += 1
     return total_loss / num_batches
 
-def train_epoch(model: nn.Module, optimizer: optim.Optimizer, train_images: mx.array, train_labels: mx.array, batch_size: int, loss_and_grad_fn) -> float:
+def train_epoch(model: nn.Module, optimizer: optim.Optimizer, train_images: mx.array, train_labels: mx.array, batch_size: int, loss_and_grad_fn, clip_grad_norm: bool = False) -> float:
     model.train()
-    for X, y in batch_iterate(batch_size, train_images, train_labels):
+    for X, y in tqdm(batch_iterate(batch_size, train_images, train_labels), total=len(train_images) // batch_size, desc='Training'):
         loss, grads = loss_and_grad_fn(model, X, y)
+        if mx.isnan(loss).any():
+            raise ValueError("Encountered NaN in loss")
+        if clip_grad_norm:
+            optim.clip_grad_norm(grads, max_norm=1.0)
         optimizer.update(model, grads)
         mx.eval(model.parameters(), optimizer.state)
     return loss.item()
@@ -68,28 +68,32 @@ def main(args):
 
     np.random.seed(seed)
 
-    print("Loading Dataset")
+    print("\nLoading Dataset...")
     train_images, train_labels, test_images, test_labels = map(
         mx.array, getattr(mnist, args.dataset)()
     )
-    print("Dataset Loaded")
+    print("...Dataset Loaded")
 
-    model = create_model(args)
+    print("\nInitializing and creating model...")
+    layers = [args.in_features * args.out_features] + [args.hidden_dim] * (args.num_layers - 1) + [args.num_classes]
+    model = KAN(layers)
+    print("Model initialized and created...")
 
     mx.eval(model.parameters())
-    print_trainable_parameters(model)
+    total_params = get_parameters(model)
+    print(f"\nTraining a Kolmogorov–Arnold Network with {total_params} parameters")
 
     loss_and_grad_fn = nn.value_and_grad(model, loss_fn)
     optimizer = optim.AdamW(learning_rate=learning_rate, weight_decay=weight_decay)
 
-    print(f"starting to train for {num_epochs} epochs")
+    print(f"\nStarting to train model for {num_epochs} epochs")
     for e in range(args.num_epochs):
         current_epoch = e + 1
         tic = time.perf_counter()
         if args.train_batched:
-            loss = train_epoch_batched(model, optimizer, train_images, train_labels, args.batch_size, loss_and_grad_fn=loss_and_grad_fn)
+            loss = train_epoch_batched(model, optimizer, train_images, train_labels, args.batch_size, loss_and_grad_fn=loss_and_grad_fn, clip_grad_norm=args.clip_grad_norm)
         else:
-            loss = train_epoch(model, optimizer, train_images, train_labels, args.batch_size, loss_and_grad_fn=loss_and_grad_fn)
+            loss = train_epoch(model, optimizer, train_images, train_labels, args.batch_size, loss_and_grad_fn=loss_and_grad_fn, clip_grad_norm=args.clip_grad_norm)
         toc = time.perf_counter()
         logging.info(f"Epoch {current_epoch}: Train Loss: {loss:.4f}, Time {toc - tic:.3f} (s)")
         print(f"Epoch {current_epoch}: Train Loss: {loss:.4f}, Time {toc - tic:.3f} (s)")
@@ -98,8 +102,8 @@ def main(args):
             tic = time.perf_counter()
             accuracy = batched_eval_fn(model, test_images, test_labels, args.batch_size)
             toc = time.perf_counter()
-            logging.info(f"Epoch {current_epoch}: Test accuracy {accuracy.item():.8f}, Time {toc - tic:.3f} (s)")
-            print(f"Epoch {current_epoch}: Test accuracy {accuracy.item():.8f}, Time {toc - tic:.3f} (s)")
+            logging.info(f"         Epoch {current_epoch}: Test accuracy {accuracy.item():.8f}, Time {toc - tic:.3f} (s)")
+            print(f"         Epoch {current_epoch}: Test accuracy {accuracy.item():.8f}, Time {toc - tic:.3f} (s)")
 
     mx.eval(model.parameters(), optimizer.state)
 
@@ -111,14 +115,7 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Train KAN on MNIST with MLX.")
     parser.add_argument("--cpu", action="store_true", help="Use the CPU instead og Metal GPU backend.")
-    parser.add_argument(
-        "--dataset",
-        type=str,
-        default="mnist",
-        choices=["mnist", "fashion_mnist"],
-        help="The dataset to use.",
-    )
-    parser.add_argument("--use-kan-convolution", action="store_true", help="Use the Convolution KAN architecture.")
+    parser.add_argument("--dataset", type=str, default="mnist", choices=["mnist", "fashion_mnist"], help="The dataset to use.")
     parser.add_argument("--num-layers", type=int, default=2, help="Number of layers in the model.")
     parser.add_argument("--hidden-dim", type=int, default=64, help="Number of hidden units in each layer.")
     parser.add_argument("--num-classes", type=int, default=10, help="Number of output classes.")
@@ -126,11 +123,12 @@ if __name__ == "__main__":
     parser.add_argument("--out-features", type=int, default=28, help="Number output features.")
     parser.add_argument("--num-epochs", type=int, default=1, help="Number of epochs to train.")
     parser.add_argument("--batch-size", type=int, default=64, help="Batch size for training.")
-    parser.add_argument("--learning-rate", type=float, default=1e-3, help="Learning rate for the optimizer.")
+    parser.add_argument("--learning-rate", type=float, default=1e-4, help="Learning rate for the optimizer.")
     parser.add_argument("--weight-decay", type=float, default=1e-4, help="Weight decay for the optimizer.")
     parser.add_argument("--eval-report-count", type=int, default=10, help="Number of epochs to report validations / test accuracy.")
     parser.add_argument("--seed", type=int, default=0, help="Random seed for reproducibility.")
     parser.add_argument("--train-batched", action="store_true", help="Train the model with batching.")
+    parser.add_argument("--clip-grad-norm", action="store_true", help="Use gradient clipping.")
     parser.add_argument("--save-path", type=str, default="trained_kan_model", help="Directory to save the model and config.")
     args = parser.parse_args()
 

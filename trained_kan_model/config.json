@@ -1,0 +1,17 @@
+{
+    "cpu": false,
+    "dataset": "fashion_mnist",
+    "num_layers": 2,
+    "hidden_dim": 64,
+    "num_classes": 10,
+    "in_features": 28,
+    "out_features": 28,
+    "num_epochs": 20,
+    "batch_size": 14,
+    "learning_rate": 0.0001,
+    "weight_decay": 0.0001,
+    "eval_report_count": 10,
+    "seed": 42,
+    "train_batched": false,
+    "save_path": "trained_kan_model"
+}

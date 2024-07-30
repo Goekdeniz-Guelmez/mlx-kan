@@ -10,10 +10,7 @@ def create_save_directory(base_path):
     print(f"Using directory: {base_path}")
     return base_path
 
-def print_trainable_parameters(model):
-    """
-    Copied from mlx-examples.
-    """
+def get_parameters(model):
     def nparams(m):
         if isinstance(m, (nn.QuantizedLinear, nn.QuantizedEmbedding)):
             return m.weight.size * (32 // m.bits)
@@ -23,7 +20,7 @@ def print_trainable_parameters(model):
         model.leaf_modules(), is_leaf=lambda m: isinstance(m, nn.Module)
     )
     total_p = sum(nparams(m) for _, m in leaf_modules) / 10**6
-    print(f"Training model with: {total_p:.3f}M params.")
+    return total_p
 
 def save_model(model: nn.Module, save_path):
     model_path = os.path.join(save_path, "model.safetensors")

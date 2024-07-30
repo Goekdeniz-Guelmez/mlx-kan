@@ -48,16 +48,12 @@ def loss_fn(model, X, y):
     return mx.mean(nn.losses.cross_entropy(model(X), y))
 
 
-def train_epoch(model: nn.Module, optimizer: optim.Optimizer, train_images: mx.array, train_labels: mx.array, loss_and_grad_fn, clip_grad_norm: bool = False) -> float:
+def train_epoch(model: nn.Module, optimizer: optim.Optimizer, train_images: mx.array, train_labels: mx.array, loss_and_grad_fn) -> float:
     model.train()
     total_loss = 0.0
     num_steps = 10
     for step in range(num_steps):
         loss, grads = loss_and_grad_fn(model, train_images, train_labels)
-        if mx.isnan(loss).any():
-            raise ValueError("Encountered NaN in loss")
-        if clip_grad_norm:
-            optim.clip_grad_norm(grads, max_norm=1.0)
         optimizer.update(model, grads)
         mx.eval(model.parameters(), optimizer.state)
         total_loss += loss.item()
@@ -69,7 +65,7 @@ def train(model, train_images, train_labels, num_epochs=100):
     optimizer = optim.AdamW(learning_rate=0.0004, weight_decay=0.003)  # Initialize a new optimizer for each model
     loss_and_grad_fn = nn.value_and_grad(model, loss_fn)
     for epoch in range(num_epochs):
-        avg_loss = train_epoch(model, optimizer, train_images, train_labels, loss_and_grad_fn, clip_grad_norm)
+        avg_loss = train_epoch(model, optimizer, train_images, train_labels, loss_and_grad_fn)
         
         # Update grid points at the end of each epoch
         for name, layer in model.__dict__.items():

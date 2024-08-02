@@ -5,41 +5,46 @@ import mlx.optimizers as optim
 from tqdm import tqdm
 
 from kan import KANLinear
-from kan.architectures.KANMLP import LlamaKANMLP, SmallKANMLP, MiddleKANMLP, BigKANMLP
+from kan.architectures.KANMLP import LlamaKANMLP, SmallKANMLP, MiddleKANMLP, BigKANMLP, KANC_MLP
 
 
 ######## ARGS
 input_data = mx.array([[12, 4]])
 output_data = mx.array([[2, 4, 1]])
+conv_input = mx.random.randint(0, 256, (1, 1, 28, 28))
 in_features = 2
 hidden_dim = 4
 out_features = 3
 
 
 ######## INFERENCE
-smallmodel = SmallKANMLP(in_features, hidden_dim, out_features)
-print(smallmodel)
-out = smallmodel(input_data)
+# smallmodel = SmallKANMLP(in_features, hidden_dim, out_features)
+# print(smallmodel)
+# out = smallmodel(input_data)
+# print(out)
+
+
+# middlemodel = MiddleKANMLP(in_features, hidden_dim, out_features)
+# print(middlemodel)
+# out = middlemodel(input_data)
+# print(out)
+
+
+# bigmodel = BigKANMLP(in_features, hidden_dim, out_features)
+# print(bigmodel)
+# out = bigmodel(input_data)
+# print(out)
+
+
+# llamamodel = LlamaKANMLP(in_features, hidden_dim, out_features)
+# print(llamamodel)
+# out = llamamodel(input_data)
+# print(out)
+
+kanc_mlp = KANC_MLP(in_features, hidden_dim, out_features)
+print(kanc_mlp)
+out = kanc_mlp(conv_input)
 print(out)
-
-
-middlemodel = MiddleKANMLP(in_features, hidden_dim, out_features)
-print(middlemodel)
-out = middlemodel(input_data)
-print(out)
-
-
-bigmodel = BigKANMLP(in_features, hidden_dim, out_features)
-print(bigmodel)
-out = bigmodel(input_data)
-print(out)
-
-
-llamamodel = LlamaKANMLP(in_features, hidden_dim, out_features)
-print(llamamodel)
-out = llamamodel(input_data)
-print(out)
-
 
 
 
@@ -78,25 +83,25 @@ def train(model, train_images, train_labels, num_epochs=100):
 
 
 
-######## TRAINING smallmodel
-print("Training smallmodel")
+# ######## TRAINING smallmodel
+# print("Training smallmodel")
 
-train(smallmodel, input_data, output_data, num_epochs=10)
-
-
-######## TRAINING middlemodel
-print("Training middlemodel")
-
-train(middlemodel, input_data, output_data, num_epochs=10)
+# train(smallmodel, input_data, output_data, num_epochs=10)
 
 
-######## TRAINING bigmodel
-print("Training bigmodel")
+# ######## TRAINING middlemodel
+# print("Training middlemodel")
 
-train(bigmodel, input_data, output_data, num_epochs=10)
+# train(middlemodel, input_data, output_data, num_epochs=10)
+
+
+# ######## TRAINING bigmodel
+# print("Training bigmodel")
+
+# train(bigmodel, input_data, output_data, num_epochs=10)
 
 
 
-######## TRAINING llamamodel
-print("Training llamamodel")
-train(llamamodel, input_data, output_data, num_epochs=10)
+# ######## TRAINING llamamodel
+# print("Training llamamodel")
+# train(llamamodel, input_data, output_data, num_epochs=10)

@@ -4,6 +4,7 @@ import mlx.core as mx
 import mlx.nn as nn
 
 from kan import KANLinear
+from kan.KAN_CONV.kan_conv import KAN_Convolutional_Layer
 
 class LlamaKANMLP(nn.Module):
     def __init__(
@@ -246,3 +247,37 @@ class BigKANMLP(nn.Module):
 
     def __call__(self, x):
         return self.layer4(self.layer3(self.layer2(self.layer1(x))))
+
+
+
+class KANC_MLP(nn.Module):
+    def __init__(
+            self,
+            in_features: int = 625,
+            hidden_dim: int = 256,
+            out_features: int = 10,
+            n_convs: int = 5,
+            kernel_size = (3,3)
+        ):
+        super().__init__()
+        self.conv1 = KAN_Convolutional_Layer(
+            n_convs = n_convs,
+            kernel_size= kernel_size
+        )
+
+        self.conv2 = KAN_Convolutional_Layer(
+            n_convs = 5,
+            kernel_size = kernel_size
+        )
+
+        self.pool1 = nn.MaxPool2d(
+            kernel_size=(2, 2)
+        )
+        
+        self.linear1 = nn.Linear(in_features, hidden_dim)
+        self.linear2 = nn.Linear(hidden_dim, out_features)
+
+
+    def __call__(self, x):
+        x = self.linear2(self.linear1(mx.flatten(self.pool1(self.conv2(self.pool1(self.conv1(x)))))))
+        return nn.log_softmax(x, axis=1)

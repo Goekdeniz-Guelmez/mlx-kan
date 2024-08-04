@@ -2,60 +2,19 @@ import mlx.core as mx
 import mlx.nn as nn
 import mlx.optimizers as optim
 
-from tqdm import tqdm
-
 from kan import KANLinear
-from kan.architectures.KANMLP import LlamaKANMLP, SmallKANMLP, MiddleKANMLP, BigKANMLP, KANC_MLP
+from kan.architectures.KANMLP import KANC_MLP
 
 
-######## ARGS
-input_data = mx.array([[12, 4]])
-output_data = mx.array([[2, 4, 1]])
-in_features = 2
-hidden_dim = 4
-out_features = 3
-
-
-######## INFERENCE
-# smallmodel = SmallKANMLP(in_features, hidden_dim, out_features)
-# print(smallmodel)
-# out = smallmodel(input_data)
-# print(out)
-
-
-# middlemodel = MiddleKANMLP(in_features, hidden_dim, out_features)
-# print(middlemodel)
-# out = middlemodel(input_data)
-# print(out)
-
-
-# bigmodel = BigKANMLP(in_features, hidden_dim, out_features)
-# print(bigmodel)
-# out = bigmodel(input_data)
-# print(out)
-
-
-# llamamodel = LlamaKANMLP(in_features, hidden_dim, out_features)
-# print(llamamodel)
-# out = llamamodel(input_data)
-# print(out)
-
-
-# Dummy input for inference (batch_size=1, channels=1, height=28, width=28)
+# Dummy input for inference
 dummy_input = mx.random.randint(0, 256, (1, 1, 28, 28))
-
-
-
 kanc_mlp = KANC_MLP()
 print(kanc_mlp)
-
-# Perform a forward pass (inference)
 output = kanc_mlp(dummy_input)
 print("Inference output:", output)
 
-# Dummy inputs for training (batch_size=8, channels=1, height=28, width=28)
+# Dummy inputs for training
 dummy_inputs = mx.random.randint(0, 256, (8, 1, 28, 28))
-# Dummy targets for training (batch_size=8, number of classes=10)
 dummy_targets = mx.random.randint(0, 10, (8,))
 
 
@@ -91,29 +50,3 @@ def train(model, train_images, train_labels, num_epochs=100):
                     layer.update_grid(train_images)
         
         print(f'Epoch {epoch + 1}/{num_epochs}, Loss: {avg_loss}')
-
-
-
-
-# ######## TRAINING smallmodel
-# print("Training smallmodel")
-
-# train(smallmodel, input_data, output_data, num_epochs=10)
-
-
-# ######## TRAINING middlemodel
-# print("Training middlemodel")
-
-# train(middlemodel, input_data, output_data, num_epochs=10)
-
-
-# ######## TRAINING bigmodel
-# print("Training bigmodel")
-
-# train(bigmodel, input_data, output_data, num_epochs=10)
-
-
-
-# ######## TRAINING llamamodel
-# print("Training llamamodel")
-# train(llamamodel, input_data, output_data, num_epochs=10)

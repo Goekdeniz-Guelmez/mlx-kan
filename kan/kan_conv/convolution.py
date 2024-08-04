@@ -4,8 +4,6 @@ import numpy as np
 from typing import Union, List
 
 import mlx.core as mx
-import mlx.nn as nn
-import torch
 
 def extract_patches(arr, patch_size):
     """ Extract patches of size patch_size from arr. """
@@ -16,15 +14,17 @@ def extract_patches(arr, patch_size):
     
     return np.lib.stride_tricks.as_strided(arr, shape=patch_shape, strides=strides)
 
-# Calculate output dimensions for convolution
 def calc_out_dims(matrix, kernel_side, stride, dilation, padding):
-    batch_size, n_channels, n, m = matrix.shape
-    h_out = np.floor((n + 2 * padding[0] - kernel_side - (kernel_side - 1) * (dilation[0] - 1)) / stride[0]).astype(int) + 1
-    w_out = np.floor((m + 2 * padding[1] - kernel_side - (kernel_side - 1) * (dilation[1] - 1)) / stride[1]).astype(int) + 1
-    b = [kernel_side // 2, kernel_side// 2]
+    """Calculate output dimensions for convolution."""
+    batch_size, n_channels, height, width = matrix.shape
+    padded_height = height + 2 * padding[0]
+    padded_width = width + 2 * padding[1]
+    kernel_height = kernel_side * dilation[0] - (dilation[0] - 1)
+    kernel_width = kernel_side * dilation[1] - (dilation[1] - 1)
+    h_out = (padded_height - kernel_height) // stride[0] + 1
+    w_out = (padded_width - kernel_width) // stride[1] + 1
     return h_out, w_out, batch_size, n_channels
 
-# Perform multiple convolutions using KAN
 def multiple_convs_kan_conv2d(
     matrix,
     kernels, 
@@ -37,7 +37,7 @@ def multiple_convs_kan_conv2d(
 
     Args:
         matrix (batch_size, colors, n, m]): 2D matrix to be convolved.
-        kernel  (function]): 2D odd-shaped matrix (e.g. 3x3, 5x5, 13x9, etc.).
+        kernels (List[function]): List of 2D kernels to apply.
         stride (Tuple[int, int], optional): Tuple of the stride along axes. With the `(r, c)` stride we move on `r` pixels along rows and on `c` pixels along columns on each iteration. Defaults to (1, 1).
         dilation (Tuple[int, int], optional): Tuple of the dilation along axes. With the `(r, c)` dilation we distancing adjacent pixels in kernel by `r` along rows and `c` along columns. Defaults to (1, 1).
         padding (Tuple[int, int], optional): Tuple with number of rows and columns to be padded. Defaults to (0, 0).
@@ -45,46 +45,52 @@ def multiple_convs_kan_conv2d(
     Returns:
         np.ndarray: 2D Feature map, i.e. matrix after convolution.
     """
+
     # Compute output dimensions
     h_out, w_out, batch_size, n_channels = calc_out_dims(matrix, kernel_side, stride, dilation, padding)
     n_convs = len(kernels)
-    
+
     # Initialize output tensor
-    matrix_out = mx.zeros((batch_size, n_channels * n_convs, h_out, w_out))
-    
-    # Unfold the input tensor using PyTorch
-    unfold = torch.nn.Unfold(kernel_size=(kernel_side, kernel_side), dilation=dilation, padding=padding, stride=stride)
-    unfolded = unfold(torch.Tensor(matrix))
-    
-    # Convert unfolded tensor to NumPy array for processing in MXNet
-    unfolded_np = unfolded.numpy()
-    unfolded_mx = mx.array(unfolded_np)
-    
-    # Reshape and transpose unfolded tensor
-    unfolded_mx = unfolded_mx.view(batch_size, n_channels, kernel_side * kernel_side, h_out * w_out).transpose((0, 2, 1, 3))
-    
+    matrix_out = np.zeros((batch_size, n_channels * n_convs, h_out, w_out))
+
+    # Pad the input matrix
+    matrix_padded = np.pad(matrix, ((0, 0), (0, 0), (padding[0], padding[0]), (padding[1], padding[1])), mode='constant')
+
     # Apply convolutional kernels
-    for channel in range(n_channels):
-        for kern in range(n_convs):
-            conv_result = kernels[kern](unfolded_mx[:, channel, :, :].flatten(0, 1))
-            matrix_out[:, kern + channel * n_convs, :, :] = mx.rray(conv_result.reshape(batch_size, h_out, w_out))
-    
+    for batch in range(batch_size):
+        for channel in range(n_channels):
+            for kern_idx, kernel in enumerate(kernels):
+                for i in range(0, h_out):
+                    for j in range(0, w_out):
+                        # Calculate window start and end indices
+                        row_start = i * stride[0]
+                        row_end = row_start + kernel_side * dilation[0]
+                        col_start = j * stride[1]
+                        col_end = col_start + kernel_side * dilation[1]
+
+                        # Extract the patch
+                        patch = matrix_padded[batch, channel, row_start:row_end:dilation[0], col_start:col_end:dilation[1]]
+
+                        # Apply kernel and store the result
+                        conv_result = kernel(patch)
+                        matrix_out[batch, channel * n_convs + kern_idx, i, j] = conv_result
+
     return matrix_out
 
 # Perform a single KAN convolution
 def kan_conv2d(
-    matrix: Union[List[List[float]], mx.array],
+    matrix: Union[List[List[float]], np.ndarray],
     kernel, 
     kernel_side,
     stride= (1, 1), 
     dilation= (1, 1), 
     padding= (0, 0)
-) -> mx.array:
+) -> np.ndarray:
     """Makes a 2D convolution with the kernel over matrix using defined stride, dilation and padding along axes.
 
     Args:
         matrix (batch_size, colors, n, m]): 2D matrix to be convolved.
-        kernel  (function]): 2D odd-shaped matrix (e.g. 3x3, 5x5, 13x9, etc.).
+        kernel (function): 2D odd-shaped matrix (e.g. 3x3, 5x5, 13x9, etc.).
         stride (Tuple[int, int], optional): Tuple of the stride along axes. With the `(r, c)` stride we move on `r` pixels along rows and on `c` pixels along columns on each iteration. Defaults to (1, 1).
         dilation (Tuple[int, int], optional): Tuple of the dilation along axes. With the `(r, c)` dilation we distancing adjacent pixels in kernel by `r` along rows and `c` along columns. Defaults to (1, 1).
         padding (Tuple[int, int], optional): Tuple with number of rows and columns to be padded. Defaults to (0, 0).
@@ -92,13 +98,32 @@ def kan_conv2d(
     Returns:
         np.ndarray: 2D Feature map, i.e. matrix after convolution.
     """
-    h_out, w_out, batch_size, n_channels = calc_out_dims(matrix, kernel_side, stride, dilation, padding)
-    
-    matrix_out = mx.zeros((batch_size,n_channels,h_out,w_out))
-    unfold = torch.nn.Unfold((kernel_side,kernel_side), dilation=dilation, padding=padding, stride=stride)
 
-    for channel in range(n_channels):
-        conv_groups = mx.array(unfold(torch.Tensor(matrix[:,channel,:,:]).unsqueeze(1)).transpose(1, 2))
-        for k in range(batch_size):
-            matrix_out[k,channel,:,:] = kernel.forward(conv_groups[k,:,:]).reshape((h_out,w_out))
+    # Compute output dimensions
+    h_out, w_out, batch_size, n_channels = calc_out_dims(matrix, kernel_side, stride, dilation, padding)
+
+    # Initialize output tensor
+    matrix_out = np.zeros((batch_size, n_channels, h_out, w_out))
+
+    # Pad the input matrix
+    matrix_padded = np.pad(matrix, ((0, 0), (0, 0), (padding[0], padding[0]), (padding[1], padding[1])), mode='constant')
+
+    # Apply convolutional kernel
+    for batch in range(batch_size):
+        for channel in range(n_channels):
+            for i in range(0, h_out):
+                for j in range(0, w_out):
+                    # Calculate window start and end indices
+                    row_start = i * stride[0]
+                    row_end = row_start + kernel_side * dilation[0]
+                    col_start = j * stride[1]
+                    col_end = col_start + kernel_side * dilation[1]
+
+                    # Extract the patch
+                    patch = matrix_padded[batch, channel, row_start:row_end:dilation[0], col_start:col_end:dilation[1]]
+
+                    # Apply kernel and store the result
+                    conv_result = kernel(patch)
+                    matrix_out[batch, channel, i, j] = conv_result
+
     return matrix_out

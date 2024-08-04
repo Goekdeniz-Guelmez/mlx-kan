@@ -335,7 +335,7 @@ The mlx-kan software suite was developed by Gökdeniz Gülmez. If you find
 mlx-kan useful in your research and wish to cite it, please use the following
 BibTex entry:
 
-```
+```text
 @software{
   mlx-kan,
   author = {Gökdeniz Gülmez},

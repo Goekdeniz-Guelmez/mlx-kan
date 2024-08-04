@@ -204,12 +204,13 @@ class KANLinear(nn.Module):
 class KAN(nn.Module):
     def __init__(
         self,
-        args: ModelArgs,
-        layers_hidden
+        layers_hidden,
+        args: ModelArgs = ModelArgs
     ):
         super().__init__()
 
         self.args = args
+        ModelArgs.layers_hidden = [args.in_features * args.out_features] + [args.hidden_dim] * (args.num_layers - 1) + [args.num_classes]
 
         # Save the grid and spline parameters
         self.grid_size = args.grid_size

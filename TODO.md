@@ -10,11 +10,12 @@
 ```python
 from mlx_kan.kan import KAN
 from mlx_kan.kan.args import ModelArgs
-from mlx_kan.trainer.Trainer import SimpleTrainer
+from mlx_kan.trainer.simpletrainer import SimpleTrainer
 
 kan_model = KAN(ModelArgs)
 
 SimpleTrainer(
+    model=kan_model,
     train=train,
     validation=validation,
     test=test,

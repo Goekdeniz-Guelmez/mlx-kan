@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, Any
+from typing import Optional, List
 from dataclasses import dataclass
 
 import mlx.nn as nn
@@ -6,7 +6,7 @@ import mlx.nn as nn
 
 @dataclass
 class ModelArgs:
-    layers_hidden = None
+    layers_hidden: Optional[List[int]] = None
     model_type: str = "KAN"
     num_layers: int = 2
     in_features: int = 28
@@ -21,3 +21,4 @@ class ModelArgs:
     hidden_act = nn.SiLU
     grid_eps: float = 0.02
     grid_range = [-1, 1]
+    # List[float] = field(default_factory=lambda: [-1, 1])

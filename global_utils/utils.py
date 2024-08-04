@@ -6,6 +6,8 @@ import mlx.nn as nn
 
 from mlx.utils import tree_flatten
 
+from kan.args import ModelArgs
+
 def create_save_directory(base_path):
     os.makedirs(base_path, exist_ok=True)
     print(f"Using directory: {base_path}")
@@ -30,10 +32,34 @@ def save_model(model: nn.Module, save_path):
     print(f"Saved model to {str(save_path)}")
 
 def save_config(model_args: Any, save_path: str, train_args: Any = None):
-    config = vars(model_args)
+    def is_json_serializable(value):
+        try:
+            json.dumps(value)
+            return True
+        except (TypeError, OverflowError):
+            return False
+
+    def serialize_dataclass(dataclass_instance):
+        if not hasattr(dataclass_instance, "__dict__"):
+            return dataclass_instance
+        return {k: v if is_json_serializable(v) else str(v) for k, v in dataclass_instance.__dict__.items() if not k.startswith("__") and not callable(v)}
+
+    config = serialize_dataclass(model_args)
     if train_args is not None:
-        config.update(vars(train_args))
+        config.update(serialize_dataclass(train_args))
+    
     config_path = os.path.join(save_path, "config.json")
     with open(config_path, 'w') as f:
         json.dump(config, f, indent=4)
     print(f"Configuration file saved to {config_path}")
+
+
+def load_config(file_path: str) -> ModelArgs:
+    with open(file_path, 'r') as f:
+        config_dict = json.load(f)
+    
+    # Remove any keys that are not valid for ModelArgs
+    valid_keys = set(ModelArgs.__dataclass_fields__.keys())
+    config_dict = {k: v for k, v in config_dict.items() if k in valid_keys}
+    
+    return ModelArgs(**config_dict)

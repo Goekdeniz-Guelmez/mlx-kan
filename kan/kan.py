@@ -1,9 +1,14 @@
 # Copyright © 2024 Gökdeniz Gülmez
 
+import os
+
+from mlx.utils import tree_unflatten
 import mlx.core as mx
 import mlx.nn as nn
 
 from kan.args import ModelArgs
+
+from global_utils.utils import load_config
 
 class KANLinear(nn.Module):
     def __init__(
@@ -204,13 +209,21 @@ class KANLinear(nn.Module):
 class KAN(nn.Module):
     def __init__(
         self,
-        layers_hidden,
-        args: ModelArgs = ModelArgs
+        args: ModelArgs,
+        layers_hidden=None,
     ):
         super().__init__()
 
         self.args = args
-        ModelArgs.layers_hidden = [args.in_features * args.out_features] + [args.hidden_dim] * (args.num_layers - 1) + [args.num_classes]
+
+        if layers_hidden is None:
+            if args.layers_hidden is None:
+                layers_hidden = [args.in_features * args.out_features] + [args.hidden_dim] * (args.num_layers - 1) + [args.num_classes]
+            else:
+                layers_hidden = args.layers_hidden
+        else:
+            layers_hidden = layers_hidden
+            self.args.layers_hidden = layers_hidden  # Update ModelArgs.layers_hidden
 
         # Save the grid and spline parameters
         self.grid_size = args.grid_size
@@ -249,3 +262,17 @@ class KAN(nn.Module):
             layer.regularization_loss(regularize_activation, regularize_entropy) 
             for layer in self.layers
         ))
+    
+    @staticmethod
+    def load_model(folder_path: str):
+        config_path = os.path.join(folder_path, "config.json")
+        npz_model_path = os.path.join(folder_path, "model.safetensors")
+        
+        config = load_config(config_path)
+        model = KAN(config)
+
+        # Load weights and update model
+        weights = tree_unflatten(list(mx.load(npz_model_path).items()))
+        model.update(weights)
+        
+        return model

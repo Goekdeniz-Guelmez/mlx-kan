@@ -6,7 +6,7 @@ from kan.args import ModelArgs
 from trainer.simpletrainer import SimpleTrainer
 from trainer.trainer_args import TrainArgs
 
-num_layers = 2
+num_layers = 8
 in_features = 28
 out_features = 28
 hidden_dim = 64
@@ -32,7 +32,8 @@ train_X, train_y = create_custom_dataset(train_samples, num_features, num_classe
 val_X, val_y = create_custom_dataset(val_samples, num_features, num_classes)
 test_X, test_y = create_custom_dataset(test_samples, num_features, num_classes)
 
-TrainArgs.max_steps = 1000
+TrainArgs.max_steps = 100
+
 SimpleTrainer(
     model=kan_model,
     args=TrainArgs,
@@ -40,5 +41,5 @@ SimpleTrainer(
     validation_set=(val_X, val_y),
     test_set=(test_X, test_y),
     validation_interval=1000,
-    logging_interval=10
+    logging_interval=100
 )

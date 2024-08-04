@@ -169,4 +169,4 @@ def SimpleTrainer(
     mx.eval(model.parameters(), opt.state)
     save_dir = create_save_directory(save_path)
     save_model(model=model, save_path=save_dir)
-    save_config(model_args=args, save_path=save_dir)
+    save_config(model_args=model.args, save_path=save_dir, train_args=args)

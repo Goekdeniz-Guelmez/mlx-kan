@@ -6,7 +6,7 @@ import mlx.nn as nn
 
 @dataclass
 class TrainArgs:
-    train_algorithm: str = "KAN"
+    train_algorithm: str = "simple"
     dataset: str = "custom"
     max_steps: int = 0
     epochs: int = 2

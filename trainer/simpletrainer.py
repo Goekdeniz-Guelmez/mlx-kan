@@ -9,8 +9,7 @@ import mlx.core as mx
 import mlx.nn as nn
 
 from trainer.trainer_args import TrainArgs
-import quick_scripts.mnist as mnist
-from quick_scripts.utils import get_parameters, save_model, save_config, create_save_directory
+from global_utils.utils import get_parameters, save_model, save_config, create_save_directory
 
 
 def loss_fn(model, X, y):
@@ -95,33 +94,32 @@ def train_step_batched(
 
 def SimpleTrainer(
         model: nn.Module,
-        dataset_type: str = "mnist", # mnist, fashion_mnist, or custom
+        args: TrainArgs,
         train_set: Optional[tuple] = None,
         validation_set: Optional[tuple] = None,
         test_set: Optional[tuple] = None,
-        max_steps: int = 0,
-        epochs: int = 2,
-        max_train_batch_size: int = 64,
-        max_val_batch_size: int = 64,
-        max_test_batch_size: int = 64,
-        learning_rate: float = 1e-3,
-        weight_decay: float = 1e-5,
-        clip_grad_norm: bool = False,
-        save_path: str = './models'
+        validation_interval: Optional[int] = None,
+        logging_interval: int = 10
     ):
+    max_steps = args.max_steps
+    epochs = args.epochs
+    max_train_batch_size = args.max_train_batch_size
+    max_val_batch_size = args.max_val_batch_size
+    max_test_batch_size = args.max_test_batch_size
+    learning_rate = args.learning_rate
+    weight_decay = args.weight_decay
+    clip_grad_norm = args.clip_grad_norm
+    save_path = args.save_path
 
-    if dataset_type != "custom":
-        train_images, train_labels, test_images, test_labels = map(mx.array, getattr(mnist, dataset_type)())
-        validation_images, validation_labels = test_images, test_labels
-    else:
-        train_images, train_labels = map(mx.array, train_set)
-        validation_images, validation_labels = map(mx.array, validation_set)
-        test_images, test_labels = map(mx.array, test_set)
+    train_images, train_labels = map(mx.array, train_set)
+    validation_images, validation_labels = map(mx.array, validation_set)
+    test_images, test_labels = map(mx.array, test_set)
 
     loss_and_grad_fn = nn.value_and_grad(model, loss_fn)
     opt = optimizer.AdamW(learning_rate=learning_rate, weight_decay=weight_decay)
 
-    print(f"\nStarting to train model for {epochs if max_steps == 0 else max_steps} {'epochs' if max_steps == 0 else 'steps'}")
+    total_prams = get_parameters(model=model)
+    print(f"\nStarting to train model with {total_prams} Params, for {epochs if max_steps == 0 else max_steps} {"epochs" if max_steps == 0 else "steps"}")
     
     if max_steps > 0:
         # Training using steps
@@ -132,10 +130,12 @@ def SimpleTrainer(
                 loss = train_step_batched(model, opt, train_images, train_labels, max_train_batch_size, loss_and_grad_fn=loss_and_grad_fn, clip_grad_norm=clip_grad_norm)
                 toc = time.perf_counter()
                 current_step += 1
-                pbar.set_postfix({"Train Loss": f"{loss:.4f}", "Time (s)": f"{toc - tic:.3f}"})
+
+                if current_step % logging_interval == 0:
+                    pbar.set_postfix({"Train Loss": f"{loss:.4f}", "Time (s)": f"{toc - tic:.3f}"})
                 pbar.update(1)
 
-                if current_step % 5 == 0 or current_step == max_steps:
+                if validation_interval and (current_step % validation_interval == 0 or current_step == max_steps):
                     tic = time.perf_counter()
                     val_accuracy = batched_eval_fn(model, validation_images, validation_labels, max_val_batch_size)
                     toc = time.perf_counter()
@@ -147,15 +147,20 @@ def SimpleTrainer(
             tic = time.perf_counter()
             loss = train_epoch_batched(model, opt, train_images, train_labels, max_train_batch_size, loss_and_grad_fn=loss_and_grad_fn, clip_grad_norm=clip_grad_norm)
             toc = time.perf_counter()
-            print(f"Epoch {current_epoch}: Train Loss: {loss:.4f}, Time {toc - tic:.3f} (s)")
 
-            if current_epoch == 1 or current_epoch % 5 == 0 or current_epoch == epochs:
+
+            if current_epoch % logging_interval == 0:
+                pbar.set_postfix(f"Epoch {current_epoch}: Train Loss: {loss:.4f}, Time {toc - tic:.3f} (s)")
+            pbar.update(1)
+
+            if validation_interval and (current_epoch % validation_interval == 0 or current_epoch == epochs):
                 tic = time.perf_counter()
                 val_accuracy = batched_eval_fn(model, validation_images, validation_labels, max_val_batch_size)
                 toc = time.perf_counter()
-                print(f"-----Epoch {current_epoch}: Validation accuracy {val_accuracy.item():.8f}, Time {toc - tic:.3f} (s)")
+                tqdm.write(f"-----Epoch {current_epoch}: Validation accuracy {val_accuracy.item():.8f}, Time {toc - tic:.3f} (s)")
 
     # Evaluate on the test set
+    print("Testing the trained model.")
     tic = time.perf_counter()
     test_accuracy = batched_eval_fn(model, test_images, test_labels, max_test_batch_size)
     toc = time.perf_counter()
@@ -164,12 +169,4 @@ def SimpleTrainer(
     mx.eval(model.parameters(), opt.state)
     save_dir = create_save_directory(save_path)
     save_model(model=model, save_path=save_dir)
-    save_config({
-        "dataset_type": dataset_type,
-        "epochs": epochs,
-        "steps": max_steps,
-        "batch_size": max_train_batch_size,
-        "learning_rate": learning_rate,
-        "weight_decay": weight_decay,
-        "clip_grad_norm": clip_grad_norm
-    }, save_dir)
+    save_config(model_args=args, save_path=save_dir)

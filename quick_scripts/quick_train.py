@@ -11,7 +11,7 @@ import quick_scripts.mnist as mnist
 from kan import KAN
 from kan.architectures.KANMLP import LlamaKANMLP, BasicKANMLP
 
-from quick_scripts.utils import get_parameters, save_model, save_config, create_save_directory
+from global_utils.utils import get_parameters, save_model, save_config, create_save_directory
 
 def loss_fn(model, X, y):
     return mx.mean(nn.losses.cross_entropy(model(X), y))

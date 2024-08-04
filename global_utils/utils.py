@@ -1,3 +1,4 @@
+from typing import Any
 import os
 import json
 import mlx.core as mx
@@ -28,8 +29,10 @@ def save_model(model: nn.Module, save_path):
     mx.save_safetensors(model_path, dict(flattened_tree))
     print(f"Saved model to {str(save_path)}")
 
-def save_config(args, save_path):
-    config = vars(args)
+def save_config(model_args: Any, save_path: str, train_args: Any = None):
+    config = vars(model_args)
+    if train_args is not None:
+        config.update(vars(train_args))
     config_path = os.path.join(save_path, "config.json")
     with open(config_path, 'w') as f:
         json.dump(config, f, indent=4)

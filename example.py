@@ -7,6 +7,8 @@ from kan import KAN
 from trainer.simpletrainer import SimpleTrainer
 from trainer.trainer_args import TrainArgs
 
+import quick_scripts.mnist as mnist
+
 num_layers = 2
 in_features = 28
 out_features = 28
@@ -31,15 +33,15 @@ val_X, val_y = create_custom_dataset(val_samples, num_features, num_classes)
 test_X, test_y = create_custom_dataset(test_samples, num_features, num_classes)
 
 
+train_images, train_labels, test_images, test_labels = map(mx.array, getattr(mnist, "mnist")()) # can be ["mnist", "fashion_mnist"]
+
+TrainArgs.max_steps = 1000
 SimpleTrainer(
     model=kan_model,
-    dataset_type="custom",
+    args=TrainArgs,
     train_set=(train_X, train_y),
     validation_set=(val_X, val_y),
     test_set=(test_X, test_y),
-    max_steps=1000,
-    epochs=2,
-    max_train_batch_size=32,
-    max_val_batch_size=32,
-    max_test_batch_size=32
+    validation_interval=1000,
+    logging_interval=10
 )

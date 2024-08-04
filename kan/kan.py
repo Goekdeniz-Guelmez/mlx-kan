@@ -3,6 +3,8 @@
 import mlx.core as mx
 import mlx.nn as nn
 
+from kan.args import ModelArgs
+
 class KANLinear(nn.Module):
     def __init__(
         self,
@@ -202,21 +204,16 @@ class KANLinear(nn.Module):
 class KAN(nn.Module):
     def __init__(
         self,
-        layers_hidden,
-        grid_size=5,  
-        spline_order=3,
-        scale_noise=0.1,
-        scale_base=1.0,
-        scale_spline=1.0,
-        hidden_act=nn.SiLU,
-        grid_eps=0.02, 
-        grid_range=[-1, 1],
+        args: ModelArgs,
+        layers_hidden
     ):
         super().__init__()
 
+        self.args = args
+
         # Save the grid and spline parameters
-        self.grid_size = grid_size
-        self.spline_order = spline_order
+        self.grid_size = args.grid_size
+        self.spline_order = args.spline_order
         
         self.layers = [] # Initialize the list of layers
 
@@ -226,14 +223,14 @@ class KAN(nn.Module):
                 KANLinear(
                     in_features,
                     out_features,
-                    grid_size=grid_size,
-                    spline_order=spline_order,
-                    scale_noise=scale_noise,
-                    scale_base=scale_base,
-                    scale_spline=scale_spline,
-                    hidden_act=hidden_act,
-                    grid_eps=grid_eps,
-                    grid_range=grid_range,
+                    grid_size=args.grid_size,
+                    spline_order=args.spline_order,
+                    scale_noise=args.scale_noise,
+                    scale_base=args.scale_base,
+                    scale_spline=args.scale_spline,
+                    hidden_act=args.hidden_act,
+                    grid_eps=args.grid_eps,
+                    grid_range=args.grid_range,
                 )
             )
     

@@ -262,23 +262,11 @@ class KANC_MLP(nn.Module):
             kernel_size: Tuple[int, int] = (3, 3)
         ):
         super().__init__()
-        self.conv1 = KAN_Convolutional_Layer(
-            n_convs = n_convs,
-            kernel_size= kernel_size
-        )
-
-        self.conv2 = KAN_Convolutional_Layer(
-            n_convs = 5,
-            kernel_size = kernel_size
-        )
-
-        self.pool1 = nn.MaxPool2d(
-            kernel_size=(2, 2)
-        )
-        
+        self.conv1 = KAN_Convolutional_Layer(n_convs=n_convs, kernel_size=kernel_size)
+        self.conv2 = KAN_Convolutional_Layer(n_convs=5, kernel_size=kernel_size)
+        self.pool1 = nn.MaxPool2d(kernel_size=(2, 2))
         self.fc1 = nn.Linear(in_features, hidden_dim)
         self.fc2 = nn.Linear(hidden_dim, out_features)
-
 
     def __call__(self, x):
         x = self.pool1(self.conv1(x))

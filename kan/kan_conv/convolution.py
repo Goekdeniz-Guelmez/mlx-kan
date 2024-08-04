@@ -1,7 +1,7 @@
 # Copyright © 2024 Gökdeniz Gülmez
 
 import numpy as np
-from typing import Union, List
+from typing import Union, List, Tuple
 
 import mlx.core as mx
 
@@ -14,17 +14,19 @@ def extract_patches(arr, patch_size):
     
     return np.lib.stride_tricks.as_strided(arr, shape=patch_shape, strides=strides)
 
+# Calculate output dimensions for convolution
 def calc_out_dims(matrix, kernel_side, stride, dilation, padding):
-    """Calculate output dimensions for convolution."""
-    batch_size, n_channels, height, width = matrix.shape
-    padded_height = height + 2 * padding[0]
-    padded_width = width + 2 * padding[1]
-    kernel_height = kernel_side * dilation[0] - (dilation[0] - 1)
-    kernel_width = kernel_side * dilation[1] - (dilation[1] - 1)
-    h_out = (padded_height - kernel_height) // stride[0] + 1
-    w_out = (padded_width - kernel_width) // stride[1] + 1
+    # Ensure the matrix has 4 dimensions
+    if len(matrix.shape) != 4:
+        raise ValueError("Input matrix must have 4 dimensions (batch_size, n_channels, height, width)")
+
+    batch_size, n_channels, n, m = matrix.shape
+    h_out = np.floor((n + 2 * padding[0] - kernel_side - (kernel_side - 1) * (dilation[0] - 1)) / stride[0]).astype(int) + 1
+    w_out = np.floor((m + 2 * padding[1] - kernel_side - (kernel_side - 1) * (dilation[1] - 1)) / stride[1]).astype(int) + 1
+    b = [kernel_side // 2, kernel_side // 2]
     return h_out, w_out, batch_size, n_channels
 
+# Perform multiple convolutions using KAN
 def multiple_convs_kan_conv2d(
     matrix,
     kernels, 
@@ -45,6 +47,16 @@ def multiple_convs_kan_conv2d(
     Returns:
         np.ndarray: 2D Feature map, i.e. matrix after convolution.
     """
+
+    def calc_out_dims(matrix, kernel_side, stride, dilation, padding):
+        batch_size, n_channels, height, width = matrix.shape
+        padded_height = height + 2 * padding[0]
+        padded_width = width + 2 * padding[1]
+        kernel_height = kernel_side * dilation[0] - (dilation[0] - 1)
+        kernel_width = kernel_side * dilation[1] - (dilation[1] - 1)
+        h_out = (padded_height - kernel_height) // stride[0] + 1
+        w_out = (padded_width - kernel_width) // stride[1] + 1
+        return h_out, w_out, batch_size, n_channels
 
     # Compute output dimensions
     h_out, w_out, batch_size, n_channels = calc_out_dims(matrix, kernel_side, stride, dilation, padding)
@@ -98,6 +110,16 @@ def kan_conv2d(
     Returns:
         np.ndarray: 2D Feature map, i.e. matrix after convolution.
     """
+
+    def calc_out_dims(matrix, kernel_side, stride, dilation, padding):
+        batch_size, n_channels, height, width = matrix.shape
+        padded_height = height + 2 * padding[0]
+        padded_width = width + 2 * padding[1]
+        kernel_height = kernel_side * dilation[0] - (dilation[0] - 1)
+        kernel_width = kernel_side * dilation[1] - (dilation[1] - 1)
+        h_out = (padded_height - kernel_height) // stride[0] + 1
+        w_out = (padded_width - kernel_width) // stride[1] + 1
+        return h_out, w_out, batch_size, n_channels
 
     # Compute output dimensions
     h_out, w_out, batch_size, n_channels = calc_out_dims(matrix, kernel_side, stride, dilation, padding)

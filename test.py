@@ -16,48 +16,29 @@ hidden_dim = 4
 out_features = 3
 
 
-######## INFERENCE
-# smallmodel = SmallKANMLP(in_features, hidden_dim, out_features)
-# print(smallmodel)
-# out = smallmodel(input_data)
-# print(out)
+####### INFERENCE
+smallmodel = SmallKANMLP(in_features, hidden_dim, out_features)
+print(smallmodel)
+out = smallmodel(input_data)
+print(out)
 
 
-# middlemodel = MiddleKANMLP(in_features, hidden_dim, out_features)
-# print(middlemodel)
-# out = middlemodel(input_data)
-# print(out)
+middlemodel = MiddleKANMLP(in_features, hidden_dim, out_features)
+print(middlemodel)
+out = middlemodel(input_data)
+print(out)
 
 
-# bigmodel = BigKANMLP(in_features, hidden_dim, out_features)
-# print(bigmodel)
-# out = bigmodel(input_data)
-# print(out)
+bigmodel = BigKANMLP(in_features, hidden_dim, out_features)
+print(bigmodel)
+out = bigmodel(input_data)
+print(out)
 
 
-# llamamodel = LlamaKANMLP(in_features, hidden_dim, out_features)
-# print(llamamodel)
-# out = llamamodel(input_data)
-# print(out)
-
-
-# Dummy input for inference (batch_size=1, channels=1, height=28, width=28)
-dummy_input = mx.random.randint(0, 256, (1, 1, 28, 28))
-
-
-
-kanc_mlp = KANC_MLP()
-print(kanc_mlp)
-
-# Perform a forward pass (inference)
-output = kanc_mlp(dummy_input)
-print("Inference output:", output)
-
-# Dummy inputs for training (batch_size=8, channels=1, height=28, width=28)
-dummy_inputs = mx.random.randint(0, 256, (8, 1, 28, 28))
-# Dummy targets for training (batch_size=8, number of classes=10)
-dummy_targets = mx.random.randint(0, 10, (8,))
-
+llamamodel = LlamaKANMLP(in_features, hidden_dim, out_features)
+print(llamamodel)
+out = llamamodel(input_data)
+print(out)
 
 
 ######## TRAINING UTILS
@@ -95,25 +76,24 @@ def train(model, train_images, train_labels, num_epochs=100):
 
 
 
-# ######## TRAINING smallmodel
-# print("Training smallmodel")
+######## TRAINING smallmodel
+print("Training smallmodel")
 
-# train(smallmodel, input_data, output_data, num_epochs=10)
-
-
-# ######## TRAINING middlemodel
-# print("Training middlemodel")
-
-# train(middlemodel, input_data, output_data, num_epochs=10)
+train(smallmodel, input_data, output_data, num_epochs=10)
 
 
-# ######## TRAINING bigmodel
-# print("Training bigmodel")
+######## TRAINING middlemodel
+print("Training middlemodel")
 
-# train(bigmodel, input_data, output_data, num_epochs=10)
+train(middlemodel, input_data, output_data, num_epochs=10)
 
 
+######## TRAINING bigmodel
+print("Training bigmodel")
 
-# ######## TRAINING llamamodel
-# print("Training llamamodel")
-# train(llamamodel, input_data, output_data, num_epochs=10)
+train(bigmodel, input_data, output_data, num_epochs=10)
+
+
+######## TRAINING llamamodel
+print("Training llamamodel")
+train(llamamodel, input_data, output_data, num_epochs=10)

@@ -1,6 +1,11 @@
+# Import the KAN model class
 from kan import KAN
 
-folder_path = "/Users/gokdenizgulmez/Desktop/mlx-kan/models"
+# Define the folder path where the model is stored
+folder_path = "/path/to/model/folder"  # Update this path to the actual location of your model
+
+# Load the pre-trained KAN model from the specified folder
 model = KAN.load_model(folder_path)
 
+# Print the details of the loaded model
 print(model)

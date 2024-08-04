@@ -1,45 +1,62 @@
+# Import necessary libraries
 import numpy as np
 
+# Import KAN model and arguments
 from kan import KAN
 from kan.args import ModelArgs
 
+# Import SimpleTrainer and training arguments
 from trainer.simpletrainer import SimpleTrainer
 from trainer.trainer_args import TrainArgs
 
-num_layers = 8
-in_features = 28
-out_features = 28
-hidden_dim = 64
-num_classes = 10
+# Define the model parameters
+num_layers = 8  # Number of layers in the model
+in_features = 28  # Input feature dimension
+out_features = 28  # Output feature dimension
+hidden_dim = 64  # Dimension of hidden layers
+num_classes = 10  # Number of output classes for classification
 
-
+# Initialize the KAN model with specified architecture
 kan_model = KAN(
-    layers_hidden=[in_features * out_features] + [hidden_dim] * (num_layers - 1) + [num_classes],
-    args=ModelArgs
+    layers_hidden=[in_features * out_features] + [hidden_dim] * (num_layers - 1) + [num_classes],  # Define layers: input layer, hidden layers, output layer
+    args=ModelArgs  # Pass model arguments
 )
 
 def create_custom_dataset(num_samples: int, num_features: int, num_classes: int):
-    X = np.random.randn(num_samples, num_features)
-    y = np.random.randint(0, num_classes, size=num_samples)
+    """
+    Create a custom dataset with random features and labels.
+    
+    Args:
+        num_samples (int): Number of samples in the dataset.
+        num_features (int): Number of features per sample.
+        num_classes (int): Number of classes for classification.
+    
+    Returns:
+        Tuple of numpy arrays: Features (X) and labels (y).
+    """
+    X = np.random.randn(num_samples, num_features)  # Generate random features
+    y = np.random.randint(0, num_classes, size=num_samples)  # Generate random labels
     return X, y
 
-# Generate custom datasets
-train_samples, val_samples, test_samples = 1000, 200, 200
-num_features = in_features * out_features
-num_classes = num_classes
+# Generate custom datasets for training, validation, and testing
+train_samples, val_samples, test_samples = 1000, 200, 200  # Number of samples for each dataset
+num_features = in_features * out_features  # Calculate total number of features
+num_classes = num_classes  # Number of classes (redundant but explicit)
 
-train_X, train_y = create_custom_dataset(train_samples, num_features, num_classes)
-val_X, val_y = create_custom_dataset(val_samples, num_features, num_classes)
-test_X, test_y = create_custom_dataset(test_samples, num_features, num_classes)
+train_X, train_y = create_custom_dataset(train_samples, num_features, num_classes)  # Training dataset
+val_X, val_y = create_custom_dataset(val_samples, num_features, num_classes)  # Validation dataset
+test_X, test_y = create_custom_dataset(test_samples, num_features, num_classes)  # Testing dataset
 
-TrainArgs.max_steps = 100
+# Set training arguments
+TrainArgs.max_steps = 100  # Maximum number of training steps
 
+# Initialize and run the SimpleTrainer
 SimpleTrainer(
-    model=kan_model,
-    args=TrainArgs,
-    train_set=(train_X, train_y),
-    validation_set=(val_X, val_y),
-    test_set=(test_X, test_y),
-    validation_interval=1000,
-    logging_interval=100
+    model=kan_model,  # Model to be trained
+    args=TrainArgs,  # Training arguments
+    train_set=(train_X, train_y),  # Training dataset
+    validation_set=(val_X, val_y),  # Validation dataset
+    test_set=(test_X, test_y),  # Testing dataset
+    validation_interval=1000,  # Interval for validation
+    logging_interval=100  # Interval for logging
 )

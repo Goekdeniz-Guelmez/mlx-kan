@@ -1,6 +1,9 @@
 # KAN: Kolmogorov–Arnold Networks in MLX for Apple silicon
 
-This code contains an example implementation of training a Kolmogorov–Arnold Network (KAN) on the MNIST dataset using the MLX framework. This example demonstrates how to configure and train the model using various command-line arguments for flexibility.
+Welcome to my implementation of Kolmogorov–Arnold Networks (KAN), meticulously optimized for Apple Silicon using the MLX framework. This Python package leverages the exceptional computational capabilities of Apple’s M1 chip and later versions, providing an advanced, efficient, and scalable solution for developing, training, and evaluating KAN models. The package is designed to facilitate seamless integration with popular datasets such as MNIST and Fashion MNIST, showcasing the versatility and robustness of KANs in various machine learning tasks.
+
+Kolmogorov–Arnold Networks represent a sophisticated approach to neural network design, incorporating innovative mathematical principles to enhance learning efficiency and model performance. This implementation is grounded in cutting-edge research, as detailed in the Kolmogorov–Arnold Networks paper, and is tailored to exploit the unique architecture of Apple’s silicon, ensuring optimal performance and resource utilization.
+
 
 Based on the [paper](https://arxiv.org/pdf/2404.19756)
 
@@ -33,7 +36,68 @@ from mlx_kan.kan import KAN
 kan_model = KAN([in_features * out_features] + [hidden_dim] * (num_layers - 1) + [num_classes])
 ```
 
-### If ypu jsut want to try out a quick and simple training session:
+### ModelArgs
+
+The `ModelArgs` class for the basic KAN model defines the arguments for configuring the KAN model:
+
+```python
+class ModelArgs:
+    layers_hidden: Optional[List[int]] = None
+    model_type: str = "KAN"
+    num_layers: int = 2
+    in_features: int = 28
+    out_features: int = 28
+    hidden_dim: int = 64
+    num_classes: int = 10
+    grid_size: int = 5
+    spline_order: float = 3
+    scale_noise: float = 0.1
+    scale_base: float = 1.0
+    scale_spline: float = 1.0
+    hidden_act = nn.SiLU
+    grid_eps: float = 0.02
+    grid_range = [-1, 1]
+```
+
+### TrainArgs
+
+The `TrainArgs` class defines the training configuration:
+
+```python
+@dataclass
+class TrainArgs:
+    train_algorithm: str = "simple"
+    dataset: str = "custom"
+    max_steps: int = 0
+    epochs: int = 2
+    max_train_batch_size: int = 32
+    max_val_batch_size: int = 32
+    max_test_batch_size: int = 32
+    learning_rate: float = 1e-3
+    weight_decay: float = 1e-5
+    clip_grad_norm: bool = False
+    save_path: str = "./models"
+```
+
+### SimpleTrainer
+
+The `SimpleTrainer` function facilitates model training with the specified arguments and datasets:
+
+```python
+def SimpleTrainer(
+    model: nn.Module,
+    args: TrainArgs,
+    train_set: Optional[tuple] = None,
+    validation_set: Optional[tuple] = None,
+    test_set: Optional[tuple] = None,
+    validation_interval: Optional[int] = None,
+    logging_interval: int = 10
+)
+```
+
+### **You can find additional example files in the mlx-kan/examples directory to help you get started with various configurations and training setups.**
+
+### If you just want to try out a quick and simple training session:
 
 ```sh
 python -m mlx-kan.quick_scripts.quick_train --help

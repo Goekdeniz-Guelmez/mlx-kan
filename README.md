@@ -324,12 +324,17 @@ Made with love by Gökdeniz Gülmez.
 <br>
 <br>
 <br>
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Goekdeniz-Guelmez/mlx-kan.git&type=Date)](https://star-history.com/#Goekdeniz-Guelmez/mlx-kan.git&Date)
+
 <br>
 <br>
 
 ---
 
-## Citing MLX Examples
+## Citing mlx-kan
 
 The mlx-kan software suite was developed by Gökdeniz Gülmez. If you find
 mlx-kan useful in your research and wish to cite it, please use the following

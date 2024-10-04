@@ -346,7 +346,7 @@ BibTex entry:
   author = {Gökdeniz Gülmez},
   title = {{mlx-kan}: KAN: Kolmogorov–Arnold Networks in MLX for Apple silicon},
   url = {https://github.com/Goekdeniz-Guelmez/mlx-kan},
-  version = {0.1.9},
+  version = {0.2.0},
   year = {2024},
 }
 ```

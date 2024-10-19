@@ -1,4 +1,4 @@
-mlx>=0.14.1
+mlx>=0.18.1
 numpy==2.0.1
 setuptools==69.5.1
 tqdm

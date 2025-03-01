@@ -1,12 +1,8 @@
 # Copyright © 2024 Gökdeniz Gülmez
 
-from typing import Tuple
-
-import mlx.core as mx
 import mlx.nn as nn
 
 from kan import KANLinear
-from kan.kan_conv.kan_convolution import KAN_Convolutional_Layer
 
 class LlamaKANMLP(nn.Module):
     def __init__(
@@ -249,29 +245,3 @@ class BigKANMLP(nn.Module):
 
     def __call__(self, x):
         return self.layer4(self.layer3(self.layer2(self.layer1(x))))
-
-
-
-class KANC_MLP(nn.Module):
-    def __init__(
-            self,
-            in_features: int = 625,
-            hidden_dim: int = 256,
-            out_features: int = 10,
-            n_convs: int = 5,
-            kernel_size: Tuple[int, int] = (3, 3)
-        ):
-        super().__init__()
-        self.conv1 = KAN_Convolutional_Layer(n_convs=n_convs, kernel_size=kernel_size)
-        self.conv2 = KAN_Convolutional_Layer(n_convs=5, kernel_size=kernel_size)
-        self.pool1 = nn.MaxPool2d(kernel_size=(2, 2))
-        self.fc1 = nn.Linear(in_features, hidden_dim)
-        self.fc2 = nn.Linear(hidden_dim, out_features)
-
-    def __call__(self, x):
-        x = self.pool1(self.conv1(x))
-        x = self.pool1(self.conv2(x))
-        x = mx.flatten(x)
-        x = nn.ReLU(self.fc1(x))
-        x = self.fc2(x)
-        return nn.log_softmax(x, axis=1)

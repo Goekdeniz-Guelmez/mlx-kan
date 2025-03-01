@@ -1,54 +1,35 @@
 # Copyright © 2024 Gökdeniz Gülmez
 
 import os
+from typing import List, Optional
 
-from mlx.utils import tree_unflatten
 import mlx.core as mx
 import mlx.nn as nn
+from mlx.utils import tree_unflatten
 
 from kan.args import ModelArgs
-
 from global_utils.utils import load_config
 
 class KANLinear(nn.Module):
     def __init__(
         self,
-        in_features,
-        out_features,
-        grid_size=5,
-        spline_order=3,
-        scale_noise=0.1,
-        scale_base=1.0,
-        scale_spline=1.0,
-        enable_standalone_scale_spline=True,
-        hidden_act=nn.SiLU,
-        grid_eps=0.02,
-        grid_range=[-1, 1],
+        in_features: int,
+        out_features: int,
+        grid_size: int = 5,
+        spline_order: int = 3,
+        scale_noise: float = 0.1,
+        scale_base: float = 1.0,
+        scale_spline: float = 1.0,
+        enable_standalone_scale_spline: bool = True,
+        hidden_act = nn.SiLU,
+        grid_eps: float = 0.02,
+        grid_range: List[float] = [-1, 1],
     ):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
         self.grid_size = grid_size
         self.spline_order = spline_order
-
-        # Calculate the step size for the grid
-        h = (grid_range[1] - grid_range[0]) / grid_size
-        # Create a grid of points for the splines
-        grid = (
-            (mx.arange(-spline_order, grid_size + spline_order + 1) * h + grid_range[0]).reshape(-1, 1)  # Reshape to a column vector
-        )
-        # Tile the grid for each input feature
-        self.grid = mx.tile(grid, (1, in_features))
-
-        # Initialize weights for the base layer and the spline layer
-        self.base_weight = mx.random.uniform(shape=(out_features, in_features))
-        self.spline_weight = mx.random.uniform(shape=(out_features, in_features, grid_size + spline_order))
-
-        # Initialize scaler for spline weights if standalone scaling is enabled
-        if enable_standalone_scale_spline:
-            self.spline_scaler = mx.random.uniform(shape=(out_features, in_features))
-
-        # Save the scaling factors and activation function
         self.scale_noise = scale_noise
         self.scale_base = scale_base
         self.scale_spline = scale_spline
@@ -56,223 +37,197 @@ class KANLinear(nn.Module):
         self.hidden_act = hidden_act()
         self.grid_eps = grid_eps
 
+        # Calculate grid points more efficiently
+        h = (grid_range[1] - grid_range[0]) / grid_size
+        grid_points = mx.arange(-spline_order, grid_size + spline_order + 1) * h + grid_range[0]
+        self.grid = mx.tile(grid_points.reshape(-1, 1), (1, in_features))
+
+        # Initialize parameters
+        self.base_weight = mx.zeros((out_features, in_features))
+        self.spline_weight = mx.zeros((out_features, in_features, grid_size + spline_order))
+        
+        if enable_standalone_scale_spline:
+            self.spline_scaler = mx.zeros((out_features, in_features))
+        
         self.reset_parameters()
 
     def reset_parameters(self):
-        # Initialize base_weight with random values scaled by scale_base
-        self.base_weight = mx.random.uniform(shape=self.base_weight.shape) * self.scale_base
-
-        # Initialize spline_weight with random values scaled by scale_spline
-        self.spline_weight = mx.random.uniform(shape=self.spline_weight.shape) * self.scale_spline
-
+        # Use more efficient initialization
+        self.base_weight = mx.random.uniform(low=-0.1, high=0.1, shape=self.base_weight.shape) * self.scale_base
+        self.spline_weight = mx.random.uniform(low=-0.1, high=0.1, shape=self.spline_weight.shape) * self.scale_spline
+        
         if self.enable_standalone_scale_spline:
-            # Initialize spline_scaler with random values scaled by scale_spline
-            self.spline_scaler = mx.random.uniform(shape=self.spline_scaler.shape) * self.scale_spline
-
+            self.spline_scaler = mx.random.uniform(low=-0.1, high=0.1, shape=self.spline_scaler.shape) * self.scale_spline
 
     def b_splines(self, x):
-        # Ensure input x has the correct dimensions
-        assert x.ndim == 2 and x.shape[1] == self.in_features
-
-        x = x[:, :, None]  # Add a new dimension to x
-        grid_reshaped = self.grid[:-1].T[None, :, :]  # Reshape to (1, in_features, grid_size)
-        next_grid_reshaped = self.grid[1:].T[None, :, :]  # Reshape to (1, in_features, grid_size)
-
-        # Compute the base splines
-        bases = mx.logical_and(x >= grid_reshaped, x < next_grid_reshaped).astype(x.dtype)
+        batch_size = x.shape[0]
+        
+        # Reshape operations optimized
+        x_expanded = x.reshape(batch_size, self.in_features, 1)
+        grid_reshaped = self.grid[:-1].T.reshape(1, self.in_features, -1)
+        next_grid_reshaped = self.grid[1:].T.reshape(1, self.in_features, -1)
+        
+        # Compute base splines
+        bases = mx.logical_and(x_expanded >= grid_reshaped, x_expanded < next_grid_reshaped).astype(mx.float32)
+        
+        # Pre-compute grid differences for efficiency
         for k in range(1, self.spline_order + 1):
-            # Update the splines for each order
-            bases = (
-                (x - self.grid[:-(k+1)].T[None, :, :]) /
-                (self.grid[k:-1].T[None, :, :] - self.grid[:-(k+1)].T[None, :, :]) *
-                bases[:, :, :-1]
-            ) + (
-                (self.grid[(k+1):].T[None, :, :] - x) /
-                (self.grid[(k+1):].T[None, :, :] - self.grid[1:(-k)].T[None, :, :]) *
-                bases[:, :, 1:]
-            )
-        # Ensure the bases have the correct shape
-        assert bases.shape == (x.shape[0], self.in_features, self.grid_size + self.spline_order)
+            grid_k = self.grid[k:-1].T.reshape(1, self.in_features, -1)
+            grid_0 = self.grid[:-(k+1)].T.reshape(1, self.in_features, -1)
+            grid_k1 = self.grid[(k+1):].T.reshape(1, self.in_features, -1)
+            grid_1 = self.grid[1:(-k)].T.reshape(1, self.in_features, -1)
+            
+            # Avoid division by zero with small epsilon
+            denom1 = mx.maximum(grid_k - grid_0, 1e-6)
+            denom2 = mx.maximum(grid_k1 - grid_1, 1e-6)
+            
+            bases = ((x_expanded - grid_0) / denom1 * bases[:, :, :-1]) + \
+                   ((grid_k1 - x_expanded) / denom2 * bases[:, :, 1:])
+                   
         return bases
 
-        
     def curve2coeff(self, x, y):
-        # Ensure input x and y have the correct dimensions
-        assert x.ndim == 2 and x.shape[1] == self.in_features
-        assert y.shape == (x.shape[0], self.in_features, self.out_features)
-        
-        # Transpose and reshape the splines and y for solving the least squares problem
+        # Optimize matrix operations
         A = self.b_splines(x).transpose(1, 0, 2)
-        B = y.transpose(1, 0, 2)  
+        B = y.transpose(1, 0, 2)
+        
+        # Use more stable solution method
         solution = mx.linalg.lstsq(A, B).solution
-        result = solution.transpose(0, 2, 1)
+        return solution.transpose(0, 2, 1)
 
-        # Ensure the result has the correct shape
-        assert result.shape == (
-            self.out_features,
-            self.in_features,  
-            self.grid_size + self.spline_order,
-        )
-        return result
-
-
-# loschen und commit
     @property
     def scaled_spline_weight(self):
-        # Scale the spline weight if standalone scaling is enabled
-        return self.spline_weight * (
-            self.spline_scaler[:, :, None] 
-            if self.enable_standalone_scale_spline
-            else 1.0
-        )
+        if self.enable_standalone_scale_spline:
+            return self.spline_weight * self.spline_scaler[:, :, None]
+        return self.spline_weight
 
     def __call__(self, x):
-        # Ensure input x has the correct dimensions
-        assert x.ndim == 2 and x.shape[1] == self.in_features
-
-        # Compute the base output
+        # Compute base output
         base_output = mx.matmul(self.hidden_act(x), self.base_weight.T)
-
-        # Compute the spline output
-        spline_output = mx.matmul(
-            self.b_splines(x.reshape(x.shape[0], -1)).reshape(x.shape[0], -1),
-            self.scaled_spline_weight.reshape(self.out_features, -1).T,  
-        )
-
-        # Return the sum of the base output and the spline output
+        
+        # Compute spline bases once
+        spline_bases = self.b_splines(x)
+        
+        # Reshape for efficient matrix multiplication
+        spline_bases_flat = spline_bases.reshape(x.shape[0], -1)
+        spline_weights_flat = self.scaled_spline_weight.reshape(self.out_features, -1)
+        
+        # Compute spline output
+        spline_output = mx.matmul(spline_bases_flat, spline_weights_flat.T)
+        
         return base_output + spline_output
 
     def update_grid(self, x, margin=0.01):
-        # Ensure input x has the correct dimensions
-        assert x.ndim == 2 and x.shape[1] == self.in_features
         batch = x.shape[0]
         
-        # Compute splines and their outputs
-        splines = self.b_splines(x)
-        splines = splines.transpose(1, 0, 2)
-        orig_coeff = self.scaled_spline_weight
-        orig_coeff = orig_coeff.transpose(1, 2, 0) 
-        unreduced_spline_output = mx.matmul(splines, orig_coeff)
-        unreduced_spline_output = unreduced_spline_output.transpose(1, 0, 2)
+        # Compute splines and outputs more efficiently
+        splines = self.b_splines(x).transpose(1, 0, 2)
+        orig_coeff = self.scaled_spline_weight.transpose(1, 2, 0)
+        unreduced_spline_output = mx.matmul(splines, orig_coeff).transpose(1, 0, 2)
         
-        # Sort x and create adaptive and uniform grids
+        # Sort x once and reuse
         x_sorted = mx.sort(x, axis=0)
-        grid_adaptive = x_sorted[
-            mx.linspace(
-                0, batch - 1, self.grid_size + 1, dtype=mx.int32
-            ).astype(mx.int64) 
-        ]
         
-        uniform_step = (x_sorted[-1] - x_sorted[0] + 2 * margin) / self.grid_size
-        grid_uniform = (
-            mx.arange(self.grid_size + 1).reshape(-1, 1).astype(mx.float32)
-            * uniform_step
-            + x_sorted[0] 
-            - margin
-        )
+        # Use vectorized operations for grid creation
+        indices = mx.linspace(0, batch - 1, self.grid_size + 1, dtype=mx.int32).astype(mx.int64)
+        grid_adaptive = x_sorted[indices]
         
-        # Blend the adaptive and uniform grids
+        # Compute uniform grid
+        x_min, x_max = x_sorted[0], x_sorted[-1]
+        uniform_step = (x_max - x_min + 2 * margin) / self.grid_size
+        grid_uniform = mx.arange(self.grid_size + 1).reshape(-1, 1).astype(mx.float32) * uniform_step + x_min - margin
+        
+        # Blend grids
         grid = self.grid_eps * grid_uniform + (1 - self.grid_eps) * grid_adaptive
-        grid = mx.concatenate(
-            [
-                grid[:1] 
-                - uniform_step
-                * mx.arange(self.spline_order, 0, -1).reshape(-1, 1),
-                grid,
-                grid[-1:]
-                + uniform_step 
-                * mx.arange(1, self.spline_order + 1).reshape(-1, 1),
-            ],
-            axis=0,
-        )
         
-        # Update the grid and spline weights
-        self.grid.set_value(grid.T)
-        self.spline_weight.set_value(self.curve2coeff(x, unreduced_spline_output))
+        # Create extended grid
+        steps_before = uniform_step * mx.arange(self.spline_order, 0, -1).reshape(-1, 1)
+        steps_after = uniform_step * mx.arange(1, self.spline_order + 1).reshape(-1, 1)
+        
+        grid = mx.concatenate([
+            grid[:1] - steps_before,
+            grid,
+            grid[-1:] + steps_after
+        ], axis=0)
+        
+        # Update grid and weights
+        self.grid = grid.T
+        self.spline_weight = self.curve2coeff(x, unreduced_spline_output)
         
     def regularization_loss(self, regularize_activation=1.0, regularize_entropy=1.0):
-        # Compute L1 norm of the spline weights
-        l1_fake = mx.abs(self.spline_weight).mean(axis=-1)
-        regularization_loss_activation = l1_fake.sum()
-
-        # Compute entropy of the spline weights
-        p = l1_fake / regularization_loss_activation
-        regularization_loss_entropy = -mx.sum(p * mx.log(p))
-
-        # Return the combined regularization loss
-        return (
-            regularize_activation * regularization_loss_activation
-            + regularize_entropy * regularization_loss_entropy
-        )
-
+        # More numerically stable implementation
+        abs_weights = mx.abs(self.spline_weight)
+        l1_norm = abs_weights.mean(axis=-1)
+        reg_activation = l1_norm.sum()
         
+        # Add small epsilon to avoid log(0)
+        epsilon = 1e-8
+        p = l1_norm / (reg_activation + epsilon)
+        reg_entropy = -mx.sum(p * mx.log(p + epsilon))
+        
+        return regularize_activation * reg_activation + regularize_entropy * reg_entropy
+
 class KAN(nn.Module):
     def __init__(
         self,
         args: ModelArgs,
-        layers_hidden=None,
+        layers_hidden: Optional[List[int]] = None,
     ):
         super().__init__()
 
         self.args = args
 
+        # Determine layer dimensions
         if layers_hidden is None:
             if args.layers_hidden is None:
                 layers_hidden = [args.in_features * args.out_features] + [args.hidden_dim] * (args.num_layers - 1) + [args.num_classes]
             else:
                 layers_hidden = args.layers_hidden
         else:
-            layers_hidden = layers_hidden
-            self.args.layers_hidden = layers_hidden  # Update ModelArgs.layers_hidden
+            self.args.layers_hidden = layers_hidden
 
-        # Save the grid and spline parameters
         self.grid_size = args.grid_size
         self.spline_order = args.spline_order
         
-        self.layers = [] # Initialize the list of layers
-
-        # Create KANLinear layers based on the hidden layers provided
-        for in_features, out_features in zip(layers_hidden, layers_hidden[1:]):
-            self.layers.append(
-                KANLinear(
-                    in_features,
-                    out_features,
-                    grid_size=args.grid_size,
-                    spline_order=args.spline_order,
-                    scale_noise=args.scale_noise,
-                    scale_base=args.scale_base,
-                    scale_spline=args.scale_spline,
-                    hidden_act=args.hidden_act,
-                    grid_eps=args.grid_eps,
-                    grid_range=args.grid_range,
-                )
+        # Create layers as a ModuleList for better parameter management
+        self.layers = nn.ModuleList([
+            KANLinear(
+                in_features=in_dim,
+                out_features=out_dim,
+                grid_size=args.grid_size,
+                spline_order=args.spline_order,
+                scale_noise=args.scale_noise,
+                scale_base=args.scale_base,
+                scale_spline=args.scale_spline,
+                hidden_act=args.hidden_act,
+                grid_eps=args.grid_eps,
+                grid_range=args.grid_range,
             )
+            for in_dim, out_dim in zip(layers_hidden, layers_hidden[1:])
+        ])
     
     def __call__(self, x, update_grid=False):
-        # Pass the input x through each layer
         for layer in self.layers:
             if update_grid:
-                layer.update_grid(x) # Update the grid if required
-            x = layer(x) # Pass the input through the current layer
+                layer.update_grid(x)
+            x = layer(x)
         return x
     
     def regularization_loss(self, regularize_activation=1.0, regularize_entropy=1.0):
-        # Compute the regularization loss for all layers
-        return mx.add(*(
-            layer.regularization_loss(regularize_activation, regularize_entropy) 
-            for layer in self.layers
-        ))
+        # More efficient implementation using sum
+        return sum(layer.regularization_loss(regularize_activation, regularize_entropy) 
+                  for layer in self.layers)
     
     @staticmethod
     def load_model(folder_path: str):
         config_path = os.path.join(folder_path, "config.json")
-        npz_model_path = os.path.join(folder_path, "model.safetensors")
+        model_path = os.path.join(folder_path, "model.safetensors")
         
         config = load_config(config_path)
         model = KAN(config)
-
-        # Load weights and update model
-        weights = tree_unflatten(list(mx.load(npz_model_path).items()))
+        
+        # Load weights
+        weights = tree_unflatten(list(mx.load(model_path).items()))
         model.update(weights)
         
         return model

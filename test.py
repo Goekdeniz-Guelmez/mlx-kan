@@ -2,11 +2,10 @@ import mlx.core as mx
 import mlx.nn as nn
 import mlx.optimizers as optim
 import time
-from typing import Dict, List, Tuple, Optional
 
 from kan import KANLinear
-from kan.architectures.KANMLP import LlamaKANMLP, SmallKANMLP, MiddleKANMLP, BigKANMLP
-from kan.kan_conv.kan_convolution import KANConv2d
+from kan.architectures.mlp import LlamaKANMLP, SmallKANMLP, MiddleKANMLP, BigKANMLP
+from kan.architectures.conv import KANConv2d
 
 class KANTester:
     """Automated test suite for KAN models"""

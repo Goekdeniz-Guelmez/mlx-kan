@@ -1,5 +1,4 @@
 # Import necessary libraries
-import numpy as np
 import mlx.core as mx  # Import mlx core module for array manipulation
 
 # Import KAN model and arguments
@@ -7,11 +6,11 @@ from kan import KAN
 from kan.args import ModelArgs
 
 # Import SimpleTrainer and training arguments
-from trainer.simpletrainer import SimpleTrainer
-from trainer.trainer_args import TrainArgs
+from kan.trainer.sft import SimpleTrainer
+from kan.trainer.trainer_args import TrainArgs
 
 # Import MNIST dataset loader
-import quick_scripts.mnist as mnist
+import kan.quick_scripts.mnist as mnist
 
 # Define the model parameters
 num_layers = 2  # Number of layers in the model

@@ -2,9 +2,9 @@
 
 import mlx.nn as nn
 
-from kan import KANLinear
+from ..kan import KANLinear
 
-class LlamaKANMLP(nn.Module):
+class GatedKANMLP(nn.Module):
     def __init__(
             self,
             in_features: int,

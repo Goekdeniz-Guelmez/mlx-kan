@@ -1,7 +1,7 @@
 # Copyright © 2024 Gökdeniz Gülmez
 
 import math
-from typing import Tuple, List, Union, Optional, Callable
+from typing import Tuple, List, Union
 
 import mlx.core as mx
 import mlx.nn as nn

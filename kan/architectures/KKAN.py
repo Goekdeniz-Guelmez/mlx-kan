@@ -3,8 +3,8 @@
 import mlx.core as mx
 import mlx.nn as nn
 
-from kan import KANLinear
-from kan.kan_convolution.kanConv import KAN_Convolutional_Layer
+from ..kan import KANLinear
+from .conv import KAN_Convolutional_Layer
 
 class KKAN_Convolutional_Network(nn.Module):
     def __init__(

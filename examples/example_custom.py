@@ -5,9 +5,9 @@ import numpy as np
 from kan import KAN
 from kan.args import ModelArgs
 
-# Import SimpleTrainer and training arguments
-from trainer.simpletrainer import SimpleTrainer
-from trainer.trainer_args import TrainArgs
+# Import SFTTrainer and training arguments
+from kan.trainer.sft import SFTTrainer
+from kan.trainer.trainer_args import TrainArgs
 
 # Define the model parameters
 num_layers = 8  # Number of layers in the model
@@ -50,8 +50,8 @@ test_X, test_y = create_custom_dataset(test_samples, num_features, num_classes) 
 # Set training arguments
 TrainArgs.max_steps = 100  # Maximum number of training steps
 
-# Initialize and run the SimpleTrainer
-SimpleTrainer(
+# Initialize and run the SFTTrainer
+SFTTrainer(
     model=kan_model,  # Model to be trained
     args=TrainArgs,  # Training arguments
     train_set=(train_X, train_y),  # Training dataset

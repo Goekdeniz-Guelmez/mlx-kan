@@ -1,7 +1,9 @@
-from textwrap import dedent
 from typing import Tuple, Path
+from textwrap import dedent
 
 import mlx.nn as nn
+
+from model_handler import load_config, load_model
 
 
 def pull_from_hub(model_path: Path, lazy: bool = False) -> Tuple[nn.Module, dict]:

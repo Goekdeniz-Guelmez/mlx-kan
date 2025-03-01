@@ -247,7 +247,10 @@ python -m quick_scripts.quick_train --dataset mnist
 Train the KAN model with a custom configuration:
 
 ```sh
-python -m quick_scripts.quick_train --dataset fashion_mnist --num-layers 2 --hidden-dim 64 --num-epochs 2 --batch-size 14 --seed 42 --clip-grad-norm
+python quick_train.py --dataset fashion_mnist --hidden-dim 256 --num-epochs 30
+ --batch-size 256 --learning-rate 5e-4 --weight-decay 1e-6
+ --clip-grad-norm --eval-interval 3 --seed 42
+ --save-path "models/fashion_mnist_large"
 ```
 
 #### Using CPU
@@ -346,7 +349,7 @@ BibTex entry:
   author = {Gökdeniz Gülmez},
   title = {{mlx-kan}: KAN: Kolmogorov–Arnold Networks in MLX for Apple silicon},
   url = {https://github.com/Goekdeniz-Guelmez/mlx-kan},
-  version = {0.2.0},
+  version = {0.2.5},
   year = {2024},
 }
 ```

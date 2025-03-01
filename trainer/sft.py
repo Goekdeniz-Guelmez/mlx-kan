@@ -92,7 +92,7 @@ def train_step_batched(
     return total_loss / num_batches
 
 
-def SimpleTrainer(
+def SFTTrainer(
         model: nn.Module,
         args: TrainArgs,
         train_set: Optional[tuple] = None,

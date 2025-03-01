@@ -328,13 +328,6 @@ Made with love by Gökdeniz Gülmez.
 <br>
 <br>
 
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=Goekdeniz-Guelmez/mlx-kan.git&type=Date)](https://star-history.com/#Goekdeniz-Guelmez/mlx-kan.git&Date)
-
-<br>
-<br>
-
 ---
 
 ## Citing mlx-kan

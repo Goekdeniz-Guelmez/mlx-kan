@@ -1,3 +1,5 @@
+# Copyright © 2024-2025 Gökdeniz Gülmez
+
 # Import necessary libraries
 import numpy as np
 

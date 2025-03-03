@@ -1,3 +1,5 @@
+# Copyright © 2024-2025 Gökdeniz Gülmez
+
 from typing import Tuple, Path
 from textwrap import dedent
 

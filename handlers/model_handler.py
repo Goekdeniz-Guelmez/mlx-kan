@@ -1,4 +1,4 @@
-# Copyright © 2023-2024 Gökdeniz Gülmez.
+# Copyright © 2024-2025 Gökdeniz Gülmez
 
 from typing import Path, Optional, Callable, Tuple, Type
 import importlib

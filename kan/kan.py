@@ -1,4 +1,4 @@
-# Copyright © 2024 Gökdeniz Gülmez
+# Copyright © 2024-2025 Gökdeniz Gülmez
 
 import os
 from typing import List, Optional

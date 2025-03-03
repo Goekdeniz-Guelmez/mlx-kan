@@ -1,4 +1,5 @@
-import sys
+# Copyright © 2024-2025 Gökdeniz Gülmez
+
 from pathlib import Path
 from setuptools import find_packages, setup
 

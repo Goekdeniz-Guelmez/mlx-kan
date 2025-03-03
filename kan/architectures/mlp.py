@@ -1,4 +1,4 @@
-# Copyright © 2024 Gökdeniz Gülmez
+# Copyright © 2024-2025 Gökdeniz Gülmez
 
 import mlx.nn as nn
 

@@ -233,7 +233,7 @@ You can run the script `main.py` to train the KAN model on the MNIST dataset. Th
 #### Find all Arguments wioth descriptions
 
 ```sh
-python -m quick_scripts.quick_train --help
+python -m mlx-kan.quick_train --help
 ```
 
 #### Basic Usage
@@ -241,7 +241,7 @@ python -m quick_scripts.quick_train --help
 Train the KAN model on the MNIST dataset with default settings:
 
 ```sh
-python -m quick_scripts.quick_train --dataset mnist
+python -m mlx-kan.quick_train --dataset mnist
 ```
 
 #### Custom Configuration
@@ -249,7 +249,7 @@ python -m quick_scripts.quick_train --dataset mnist
 Train the KAN model with a custom configuration:
 
 ```sh
-python quick_train.py --dataset fashion_mnist --hidden-dim 256 --num-epochs 30
+python mlx-kan.quick_train.py --dataset fashion_mnist --hidden-dim 256 --num-epochs 30
  --batch-size 256 --learning-rate 5e-4 --weight-decay 1e-6
  --clip-grad-norm --eval-interval 3 --seed 42
  --save-path "models/fashion_mnist_large"
@@ -260,7 +260,7 @@ python quick_train.py --dataset fashion_mnist --hidden-dim 256 --num-epochs 30
 Train the KAN model using the CPU backend:
 
 ```sh
-python -m quick_scripts.quick_train --cpu --dataset mnist
+python -m mlx-kan.quick_train --cpu --dataset mnist
 ```
 
 ## Model Architecture
@@ -345,6 +345,6 @@ BibTex entry:
   title = {{mlx-kan}: KAN: Kolmogorov–Arnold Networks in MLX for Apple silicon},
   url = {https://github.com/Goekdeniz-Guelmez/mlx-kan},
   version = {0.2.5},
-  year = {2024},
+  year = {2025},
 }
 ```

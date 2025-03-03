@@ -1,3 +1,5 @@
+# Copyright © 2024-2025 Gökdeniz Gülmez
+
 # Import necessary libraries
 import mlx.core as mx  # Import mlx core module for array manipulation
 

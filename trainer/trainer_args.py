@@ -1,4 +1,5 @@
-from typing import Optional, Tuple
+# Copyright © 2024-2025 Gökdeniz Gülmez
+
 from dataclasses import dataclass
 
 import mlx.nn as nn

@@ -1,3 +1,5 @@
+# Copyright © 2024-2025 Gökdeniz Gülmez
+
 # Import the KAN model class
 from kan import KAN
 

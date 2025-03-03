@@ -1,3 +1,5 @@
+# Copyright © 2024-2025 Gökdeniz Gülmez
+
 import argparse, logging, time, gzip, os, pickle
 import mlx.optimizers as optim
 from urllib import request

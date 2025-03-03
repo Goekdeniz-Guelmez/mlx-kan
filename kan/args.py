@@ -1,3 +1,5 @@
+# Copyright © 2024-2025 Gökdeniz Gülmez
+
 from typing import Optional, List
 from dataclasses import dataclass
 

@@ -1,5 +1,7 @@
 # KAN: Kolmogorov–Arnold Networks in MLX for Apple silicon
 
+![logo](logo.png)
+
 Welcome to my implementation of Kolmogorov–Arnold Networks (KAN), meticulously optimized for Apple Silicon using the MLX framework. This Python package leverages the exceptional computational capabilities of Apple’s M1 chip and later versions, providing an advanced, efficient, and scalable solution for developing, training, and evaluating KAN models. The package is designed to facilitate seamless integration with popular datasets such as MNIST and Fashion MNIST, showcasing the versatility and robustness of KANs in various machine learning tasks.
 
 Kolmogorov–Arnold Networks represent a sophisticated approach to neural network design, incorporating innovative mathematical principles to enhance learning efficiency and model performance. This implementation is grounded in cutting-edge research, as detailed in the Kolmogorov–Arnold Networks paper, and is tailored to exploit the unique architecture of Apple’s silicon, ensuring optimal performance and resource utilization.

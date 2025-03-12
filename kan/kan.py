@@ -24,6 +24,7 @@ class KANLinear(nn.Module):
         hidden_act = nn.SiLU,
         grid_eps: float = 0.02,
         grid_range: List[float] = [-1, 1],
+        bias: bool = True
     ):
         super().__init__()
         self.in_features = in_features
@@ -34,8 +35,37 @@ class KANLinear(nn.Module):
         self.scale_base = scale_base
         self.scale_spline = scale_spline
         self.enable_standalone_scale_spline = enable_standalone_scale_spline
-        self.hidden_act = hidden_act()
+
+        # Handle different types of activation functions
+        if hidden_act is None:
+            self.hidden_act = lambda x: x
+        elif isinstance(hidden_act, str):
+            # Map string names to activation functions
+            act_dict = {
+                'silu': nn.SiLU(),
+                'gelu': nn.GELU(),
+                'relu': nn.ReLU(),
+                'tanh': mx.tanh,
+                'sigmoid': mx.sigmoid,
+                'identity': lambda x: x,
+            }
+            if hidden_act.lower() in act_dict:
+                self.hidden_act = act_dict[hidden_act.lower()]
+            else:
+                raise ValueError(f"Unsupported activation function: {hidden_act}")
+        elif callable(hidden_act):
+            # If it's a class like nn.SiLU, instantiate it
+            try:
+                self.hidden_act = hidden_act()
+            except TypeError:
+                # If it's already a function, use it directly
+                self.hidden_act = hidden_act
+        else:
+            # Assume it's already an instantiated activation function
+            self.hidden_act = hidden_act
+        
         self.grid_eps = grid_eps
+        self.bias = bias
 
         # Calculate grid points more efficiently
         h = (grid_range[1] - grid_range[0]) / grid_size
@@ -49,6 +79,9 @@ class KANLinear(nn.Module):
         if enable_standalone_scale_spline:
             self.spline_scaler = mx.zeros((out_features, in_features))
         
+        if self.bias:
+            self.bias = mx.zeros(out_features)
+        
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -58,6 +91,9 @@ class KANLinear(nn.Module):
         
         if self.enable_standalone_scale_spline:
             self.spline_scaler = mx.random.uniform(low=-0.1, high=0.1, shape=self.spline_scaler.shape) * self.scale_spline
+        
+        if self.bias:
+            self.bias = mx.random.uniform(low=-0.1, high=0.1, shape=self.b.shape)
 
     def b_splines(self, x):
         batch_size = x.shape[0]
@@ -115,7 +151,11 @@ class KANLinear(nn.Module):
         # Compute spline output
         spline_output = mx.matmul(spline_bases_flat, spline_weights_flat.T)
         
-        return base_output + spline_output
+        # Add bias if enabled
+        if self.bias:
+            return base_output + spline_output + self.b
+        else:
+            return base_output + spline_output
 
     def update_grid(self, x, margin=0.01):
         batch = x.shape[0]

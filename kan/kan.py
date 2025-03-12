@@ -104,7 +104,7 @@ class KANLinear(nn.Module):
         next_grid_reshaped = self.grid[1:].T.reshape(1, self.in_features, -1)
         
         # Compute base splines
-        bases = mx.logical_and(x_expanded >= grid_reshaped, x_expanded < next_grid_reshaped).astype(mx.float32)
+        bases = mx.logical_and(x_expanded >= grid_reshaped, x_expanded < next_grid_reshaped).astype(mx.float16)
         
         # Pre-compute grid differences for efficiency
         for k in range(1, self.spline_order + 1):
@@ -175,7 +175,7 @@ class KANLinear(nn.Module):
         # Compute uniform grid
         x_min, x_max = x_sorted[0], x_sorted[-1]
         uniform_step = (x_max - x_min + 2 * margin) / self.grid_size
-        grid_uniform = mx.arange(self.grid_size + 1).reshape(-1, 1).astype(mx.float32) * uniform_step + x_min - margin
+        grid_uniform = mx.arange(self.grid_size + 1).reshape(-1, 1).astype(mx.float16) * uniform_step + x_min - margin
         
         # Blend grids
         grid = self.grid_eps * grid_uniform + (1 - self.grid_eps) * grid_adaptive

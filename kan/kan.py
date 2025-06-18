@@ -134,7 +134,28 @@ class KANLinear(nn.Module):
     
     def b_splines(self, x: mx.array) -> mx.array:
         """Compute B-spline basis functions with optimized operations."""
-        batch_size, in_features = x.shape
+        # Store original shape for later reshaping
+        original_shape = x.shape
+        
+        # Handle different input shapes
+        if len(original_shape) == 2:
+            batch_size, in_features = original_shape
+            seq_len = None
+        elif len(original_shape) == 3:
+            batch_size, seq_len, in_features = original_shape
+            x = x.reshape(-1, in_features)  # Flatten to 2D for processing
+        else:
+            # Handle other cases by flattening all but last dimension
+            in_features = original_shape[-1]
+            total_elements = 1
+            for dim in original_shape[:-1]:
+                total_elements *= dim
+            x = x.reshape(total_elements, in_features)
+            batch_size = total_elements
+            seq_len = None
+        
+        # Clamp input to grid range for numerical stability
+        x = mx.clip(x, self.grid_range[0], self.grid_range[1])
         
         # Expand dimensions for broadcasting
         x_expanded = x[:, :, None]  # [batch, in_features, 1]
@@ -146,7 +167,7 @@ class KANLinear(nn.Module):
         # Initialize with order 0 (indicator functions)
         bases = ((x_expanded >= grid_left) & (x_expanded < grid_right)).astype(mx.float32)
         
-        # Iteratively build higher order splines
+        # Iteratively build higher order splines using Cox-de Boor recursion
         for k in range(1, self.spline_order + 1):
             if bases.shape[-1] <= 1:
                 break
@@ -168,26 +189,55 @@ class KANLinear(nn.Module):
             
             bases = left_term + right_term
         
+        # Reshape back to match input shape structure
+        if len(original_shape) == 3:
+            # Reshape back to [batch_size, seq_len, in_features, basis_size]
+            bases = bases.reshape(batch_size, seq_len, in_features, bases.shape[-1])
+        elif len(original_shape) > 3:
+            # Reshape back to [..., in_features, basis_size]
+            new_shape = list(original_shape) + [bases.shape[-1]]
+            bases = bases.reshape(new_shape)
+        
         return bases
     
     def curve2coeff(self, x: mx.array, y: mx.array) -> mx.array:
         """Convert curve samples to spline coefficients using least squares."""
+        # Store original shape
+        original_x_shape = x.shape
+        original_y_shape = y.shape
+        
+        # Flatten inputs if needed
+        if len(original_x_shape) == 3:
+            batch_size, seq_len, in_features = original_x_shape
+            x = x.reshape(-1, in_features)
+            y = y.reshape(-1, original_y_shape[-1])
+        
         # Get B-spline basis
-        A = self.b_splines(x)  # [batch, in_features, grid_size + spline_order]
+        A = self.b_splines(x)  # [..., in_features, basis_size]
+        
+        # Ensure A is 2D for least squares
+        if len(A.shape) > 3:
+            A = A.reshape(-1, A.shape[-2], A.shape[-1])
         
         # Reshape for batch processing
         A_reshaped = A.transpose(1, 0, 2)  # [in_features, batch, basis_size]
-        y_reshaped = y.transpose(1, 0, 2)  # [in_features, batch, out_features]
+        y_reshaped = y.transpose(1, 0)[:, :, None]  # [in_features, batch, 1]
         
         # Solve least squares problem for each input feature
         coefficients = []
         for i in range(self.in_features):
-            coeff = mx.linalg.lstsq(A_reshaped[i], y_reshaped[i]).solution
-            coefficients.append(coeff)
+            try:
+                coeff = mx.linalg.lstsq(A_reshaped[i], y_reshaped[i]).solution
+                coefficients.append(coeff)
+            except:
+                # Fallback to pseudo-inverse if lstsq fails
+                A_pinv = mx.linalg.pinv(A_reshaped[i])
+                coeff = mx.matmul(A_pinv, y_reshaped[i])
+                coefficients.append(coeff)
         
         # Stack and reshape
-        coefficients = mx.stack(coefficients, axis=0)  # [in_features, basis_size, out_features]
-        return coefficients.transpose(2, 0, 1)  # [out_features, in_features, basis_size]
+        coefficients = mx.stack(coefficients, axis=0)  # [in_features, basis_size, 1]
+        return coefficients.transpose(2, 0, 1)  # [1, in_features, basis_size]
     
     @property
     def scaled_spline_weight(self) -> mx.array:
@@ -202,17 +252,32 @@ class KANLinear(nn.Module):
         if x.shape[-1] != self.in_features:
             raise ValueError(f"Expected {self.in_features} input features, got {x.shape[-1]}")
         
+        # Store original shape for output reshaping
+        original_shape = x.shape
+        
+        # Handle different input shapes
+        if len(original_shape) == 3:
+            batch_size, seq_len, in_features = original_shape
+            x_2d = x.reshape(-1, in_features)
+        else:
+            x_2d = x
+            batch_size = x.shape[0] if len(x.shape) > 1 else 1
+        
         # Base transformation
-        base_output = mx.matmul(self.hidden_act(x), self.base_weight.T)
+        base_output = mx.matmul(self.hidden_act(x_2d), self.base_weight.T)
         
         # Spline transformation
-        spline_bases = self.b_splines(x)  # [batch, in_features, basis_size]
+        spline_bases = self.b_splines(x)  # Handles shape internally
+        
+        # Reshape spline_bases for matrix multiplication
+        if len(original_shape) == 3:
+            # Flatten the batch and sequence dimensions
+            spline_bases_flat = spline_bases.reshape(-1, spline_bases.shape[-2] * spline_bases.shape[-1])
+        else:
+            spline_bases_flat = spline_bases.reshape(spline_bases.shape[0], -1)
         
         # Efficient matrix multiplication
-        batch_size = x.shape[0]
-        spline_bases_flat = spline_bases.reshape(batch_size, -1)
         spline_weight_flat = self.scaled_spline_weight.reshape(self.out_features, -1)
-        
         spline_output = mx.matmul(spline_bases_flat, spline_weight_flat.T)
         
         # Combine outputs
@@ -222,24 +287,39 @@ class KANLinear(nn.Module):
         if self.bias:
             output = output + self.bias_param
         
+        # Reshape output to match input structure
+        if len(original_shape) == 3:
+            output = output.reshape(batch_size, seq_len, self.out_features)
+        
         return output
     
     def update_grid(self, x: mx.array, margin: float = 0.01):
         """Update grid points based on input distribution."""
-        batch_size = x.shape[0]
+        # Handle 3D input by flattening
+        original_shape = x.shape
+        if len(original_shape) == 3:
+            batch_size, seq_len, in_features = original_shape
+            x_flat = x.reshape(-1, in_features)
+        else:
+            x_flat = x
+        
+        batch_size = x_flat.shape[0]
         
         # Store original outputs for coefficient computation
         spline_bases = self.b_splines(x)
         orig_coeffs = self.scaled_spline_weight
         
         # Compute original spline outputs
-        spline_bases_flat = spline_bases.reshape(batch_size, -1)
+        if len(original_shape) == 3:
+            spline_bases_flat = spline_bases.reshape(-1, spline_bases.shape[-2] * spline_bases.shape[-1])
+        else:
+            spline_bases_flat = spline_bases.reshape(batch_size, -1)
+        
         spline_weight_flat = orig_coeffs.reshape(self.out_features, -1)
         orig_outputs = mx.matmul(spline_bases_flat, spline_weight_flat.T)
-        orig_outputs = orig_outputs.reshape(batch_size, self.out_features, 1)
         
-        # Create adaptive grid based on input quantiles
-        x_sorted = mx.sort(x, axis=0)
+        # Create adaptive grid based on input distribution
+        x_sorted = mx.sort(x_flat, axis=0)
         
         # Use quantiles for better distribution coverage
         quantile_indices = mx.linspace(0, batch_size - 1, self.grid_size + 1)
@@ -279,7 +359,13 @@ class KANLinear(nn.Module):
         
         # Update grid and recompute coefficients
         self.grid = grid_extended
-        self.spline_weight = self.curve2coeff(x, orig_outputs)
+        
+        # Recompute coefficients with proper reshaping
+        if len(original_shape) == 3:
+            orig_outputs_reshaped = orig_outputs.reshape(batch_size, seq_len, self.out_features)
+            self.spline_weight = self.curve2coeff(x, orig_outputs_reshaped)
+        else:
+            self.spline_weight = self.curve2coeff(x, orig_outputs)
     
     def regularization_loss(
         self, 
@@ -309,7 +395,6 @@ class KAN(nn.Module):
         self,
         args: ModelArgs,
         layers_hidden: Optional[List[int]] = None,
-        config: Optional[ModelArgs] = ModelArgs(),
     ):
         super().__init__()
         
@@ -319,7 +404,6 @@ class KAN(nn.Module):
         if layers_hidden is None:
             layers_hidden = self._get_default_architecture(args)
         
-        self.config = config
         self.layers_hidden = layers_hidden
         
         self.layers = [
@@ -360,14 +444,6 @@ class KAN(nn.Module):
         """Forward pass through the network."""
         for i in range(self.num_layers):
             layer = getattr(self, f'layer_{i}')
-            if update_grid:
-                layer.update_grid(x)
-            x = layer(x)
-        return x
-    
-    def __call__(self, x: mx.array, update_grid: bool = False) -> mx.array:
-        """Forward pass through the network."""
-        for layer in self.layers:
             if update_grid:
                 layer.update_grid(x)
             x = layer(x)

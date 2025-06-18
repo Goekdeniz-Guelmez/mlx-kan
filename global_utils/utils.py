@@ -6,9 +6,10 @@ import json
 import mlx.core as mx
 import mlx.nn as nn
 
-from mlx.utils import tree_flatten
+from mlx.utils import tree_flatten, tree_unflatten
 
 from kan.args import ModelArgs
+from kan.kan import KAN
 
 def create_save_directory(base_path):
     os.makedirs(base_path, exist_ok=True)
@@ -60,8 +61,20 @@ def load_config(file_path: str) -> ModelArgs:
     with open(file_path, 'r') as f:
         config_dict = json.load(f)
     
-    # Remove any keys that are not valid for ModelArgs
     valid_keys = set(ModelArgs.__dataclass_fields__.keys())
     config_dict = {k: v for k, v in config_dict.items() if k in valid_keys}
     
     return ModelArgs(**config_dict)
+
+
+def load_model(folder_path: str):
+    config_path = os.path.join(folder_path, "config.json")
+    model_path = os.path.join(folder_path, "model.safetensors")
+    
+    config = load_config(config_path)
+    model = KAN(config)
+    
+    weights = tree_unflatten(list(mx.load(model_path).items()))
+    model.update(weights)
+    
+    return model

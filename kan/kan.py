@@ -5,10 +5,8 @@ from typing import List, Optional
 
 import mlx.core as mx
 import mlx.nn as nn
-from mlx.utils import tree_unflatten
 
 from kan.args import ModelArgs
-from global_utils.utils import load_config
 
 class KANLinear(nn.Module):
     def __init__(
@@ -257,17 +255,3 @@ class KAN(nn.Module):
         # More efficient implementation using sum
         return sum(layer.regularization_loss(regularize_activation, regularize_entropy) 
                   for layer in self.layers)
-    
-    @staticmethod
-    def load_model(folder_path: str):
-        config_path = os.path.join(folder_path, "config.json")
-        model_path = os.path.join(folder_path, "model.safetensors")
-        
-        config = load_config(config_path)
-        model = KAN(config)
-        
-        # Load weights
-        weights = tree_unflatten(list(mx.load(model_path).items()))
-        model.update(weights)
-        
-        return model

@@ -1,6 +1,6 @@
 # Copyright © 2024-2025 Gökdeniz Gülmez
 
-from typing import Any
+from typing import Any, Union, Callable
 import os
 import json
 import mlx.core as mx
@@ -27,6 +27,22 @@ def get_parameters(model):
     )
     total_p = sum(nparams(m) for _, m in leaf_modules) / 10**6
     return total_p
+
+def get_num_parameters(model) -> int:
+    total_params = 0
+    for layer in model.layers:
+        # Count base weights
+        total_params += layer.base_weight.size
+        # Count spline weights
+        total_params += layer.spline_weight.size
+        # Count spline scalers if enabled
+        if layer.config.enable_standalone_scale_spline:
+            total_params += layer.spline_scaler.size
+        # Count bias if enabled
+        if layer.config.bias:
+            total_params += layer.bias_param.size
+    
+    return total_params
 
 def save_model(model: nn.Module, save_path):
     model_path = os.path.join(save_path, "model.safetensors")

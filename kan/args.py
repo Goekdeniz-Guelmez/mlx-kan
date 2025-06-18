@@ -23,3 +23,4 @@ class ModelArgs:
     hidden_act = nn.SiLU
     grid_eps: float = 0.02
     grid_range = [-1, 1]
+    enable_standalone_scale_spline: bool = False

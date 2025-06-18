@@ -250,7 +250,7 @@ def main():
     parser.add_argument("--out-features", type=int, default=28, help="Output feature dimension")
     
     # Training settings
-    parser.add_argument("--num-epochs", type=int, default=10, help="Number of training epochs")
+    parser.add_argument("--num-epochs", type=int, default=20, help="Number of training epochs")
     parser.add_argument("--batch-size", type=int, default=64, help="Batch size for training")
     parser.add_argument("--learning-rate", type=float, default=1e-4, help="Learning rate")
     parser.add_argument("--weight-decay", type=float, default=1e-4, help="Weight decay")

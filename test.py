@@ -5,8 +5,8 @@ import mlx.nn as nn
 import mlx.optimizers as optim
 import time
 
-from kan import KANLinear
-from kan.architectures.mlp import LlamaKANMLP, SmallKANMLP, MiddleKANMLP, BigKANMLP
+from kan.kan import KANLinear
+from kan.architectures.mlp import GatedKANMLP, SmallKANMLP, MiddleKANMLP, BigKANMLP
 from kan.architectures.conv import KANConv2d
 
 class KANTester:
@@ -25,7 +25,7 @@ class KANTester:
         self.out_features = 3
         
         # Training parameters
-        self.num_epochs = 10
+        self.num_epochs = 100
         self.learning_rate = 0.0004
         self.weight_decay = 0.003
         
@@ -38,7 +38,7 @@ class KANTester:
             'SmallKANMLP': SmallKANMLP(self.in_features, self.hidden_dim, self.out_features),
             'MiddleKANMLP': MiddleKANMLP(self.in_features, self.hidden_dim, self.out_features),
             'BigKANMLP': BigKANMLP(self.in_features, self.hidden_dim, self.out_features),
-            'LlamaKANMLP': LlamaKANMLP(self.in_features, self.hidden_dim, self.out_features)
+            'GatedKANMLP': GatedKANMLP(self.in_features, self.hidden_dim, self.out_features)
         }
         
         for name, model in mlp_models.items():
